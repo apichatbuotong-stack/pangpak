@@ -534,7 +534,7 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
       <button class="btn gh" id="buyClrBtn" style="display:none" onclick="camReset('buy')">🗑️ ลบรูป</button></div>
     <button class="btn" onclick="saveBuy()">💾 บันทึก &amp; อัปเดตราคาซื้อ</button>
   </div>
-  <h2>📜 ประวัติการซื้อเข้า</h2><div id="bilist"></div>
+  <h2>📜 ประวัติการซื้อเข้า</h2><div class="card mini" id="purchaseCloudStatus">☁️ กรุณาเข้าสู่ระบบคลาวด์เพื่อซิงค์ประวัติและรูป</div><button class="btn gh" onclick="importLegacyPurchases()">⬆️ นำเข้าประวัติซื้อเข้าเก่าจากเครื่องนี้</button><div id="bilist"></div>
   <div class="aff-slide-wrap">
     <div class="aff-slide-title"><b>🛒 สินค้าแนะนำสำหรับร้านค้า</b><button class="btn gh sm" onclick="go(5,null)">ดูทั้งหมด</button></div>
     <div class="mini" style="margin-bottom:7px">สินค้าใช้ประจำจาก Big C, Makro และ 7-Eleven</div>
@@ -1888,9 +1888,26 @@ function addBuy(id,q,p,s,ph){
   d:new Date().toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'}),ph:ph||0});
  if(S.buys.length>150)S.buys.length=150;
  save();badge();return {it:it,oldBuy:oldBuy,buyPrice:p}}
-function doSaveBuy(id,q,p,s){var o=addBuy(id,q,p,s,biPhoto);if(!o)return;
- biPhoto='';paintPhoto('buy','');biList();biHint();if(onPage(2))bom();
- say('✅ บันทึกซื้อเข้าแล้ว',o.it.n+' +'+q+' '+o.it.u+'\nสต๊อกใหม่ = '+o.it.s+' '+o.it.u+'\nต้นทุนซื้อ ฿'+p+'/'+o.it.u)}
+let purchaseBusy=false;
+async function savePurchaseEntry(id,q,p,s,photo,fromRestock){
+ if(purchaseBusy)return;
+ if(!cloud||!cloudUser||!cloudReady){toast('⚠️ กรุณาเข้าสู่ระบบคลาวด์ก่อนบันทึกซื้อเข้า');return}
+ purchaseBusy=true;
+ try{
+  const it=itm(id);if(!it)throw Error('ไม่พบสินค้า');
+  const purchase={id:id,n:it.n,c:it.c,u:it.u,q:q,p:p,sell:it.p,s:s,d:new Date().toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'})};
+  const saved=await savePurchaseCloud(purchase,photo);
+  // Only update stock after the purchase has been safely stored in Supabase.
+  const o=addBuy(id,q,p,s,saved.url||0);
+  if(!o)throw Error('ไม่สามารถอัปเดตสต๊อก');
+  S.buys[0].cloudId=saved.id;S.buys[0].photo_path=saved.path||null;
+  save();
+  if(fromRestock){rsClose();restock()}else{biPhoto='';paintPhoto('buy','');biList();biHint()}
+  say('✅ บันทึกซื้อเข้าแล้ว',o.it.n+' +'+q+' '+o.it.u+'\nสต๊อกใหม่ = '+o.it.s+' '+o.it.u+'\nข้อมูลและรูปอยู่บน Supabase');
+ }catch(e){console.error(e);alert('⚠️ ยังบันทึกซื้อเข้าไม่สำเร็จ: '+e.message+'\nกรุณาลองใหม่ ไม่ต้องเพิ่มสต๊อกซ้ำ')}
+ finally{purchaseBusy=false}
+}
+function doSaveBuy(id,q,p,s){return savePurchaseEntry(id,q,p,s,biPhoto,false)}
 function saveBuy(){var id=val('biV'),q=parseFloat(val('biQ')),p=parseFloat(val('biP'))||0,s=val('biS')||'ไม่ระบุแผง';
  if(!itm(id)){toast('ไม่พบสินค้า');return}
  if(!q||q<=0){toast('กรอกจำนวนให้ถูกต้อง');return}
@@ -1911,9 +1928,16 @@ function biList(){biOpts();
    +'<div class="mini">🏪 '+b.s+' · '+b.d+'</div></div>'
    +'<button class="btn r sm" onclick="delBuy('+i+')">ลบ</button></div></div>'}).join('')}
 function delBuy(i){var b=S.buys[i];if(!b)return;
- ask('🗑️ ลบรายการ',b.n+' '+b.q+' '+b.u+'\nระบบจะหักสต๊อกคืน',function(){
+ ask('🗑️ ลบรายการ',b.n+' '+b.q+' '+b.u+'\nระบบจะหักสต๊อกคืน',async function(){
+  try{if(b.cloudId){if(!cloud||!cloudUser)throw Error('ต้องเข้าสู่ระบบคลาวด์');
+   const {error}=await cloud.from('purchase_records').delete().eq('id',b.cloudId).eq('user_id',cloudUser.id);
+   if(error)throw error;
+   // Do not remove receipt file automatically: avoid orphaned history data loss on partial failure.
+  }
   var it=itm(b.id);if(it)it.s=Math.max(0,Math.round((it.s-b.q)*100)/100);
-  S.buys.splice(i,1);save();biList();badge();if(onPage(9))restock();toast('ลบแล้ว')})}
+  S.buys.splice(i,1);save();biList();badge();if(onPage(9))restock();toast('ลบแล้ว');
+  }catch(e){alert('ลบไม่สำเร็จ: '+e.message)}
+ })}
 
 /* ========== 8 ราคาแม่ค้า ========== */
 function saveVP(){var id=val('vpV'),s=val('vpS').trim(),p=parseFloat(val('vpP')),qt=parseInt(val('vpQ'),10)||2;
@@ -2052,8 +2076,7 @@ function camOpenRS(){camTarget='rs';
 function rsSave(){var x=itm(rsId);if(!x)return;
  var q=parseFloat(val('rsQ')),p=parseFloat(val('rsP'))||0,s=val('rsS')||'ไม่ระบุแผง';
  if(!q||q<=0){toast('กรอกจำนวนให้ถูกต้อง');return}
- var o=addBuy(rsId,q,p,s,rsPhoto);rsClose();restock();
- say('✅ บันทึกแล้ว',o.it.n+' +'+q+' '+o.it.u+'\nสต๊อกใหม่ = '+o.it.s+' '+o.it.u)}
+ return savePurchaseEntry(rsId,q,p,s,rsPhoto,true)}
 function restockLine(){
  var lowV=S.V.filter(function(x){return isLow(x)&&S.restockHide.indexOf(x.id)===-1});
  var lowG=S.G.filter(function(x){return lowGCheck(x)&&S.restockHide.indexOf(x.id)===-1});
@@ -2249,6 +2272,79 @@ const cloudStatus=message=>{const el=document.getElementById('cloudStatus');if(e
 try{if(window.supabase?.createClient)cloud=window.supabase.createClient(CLOUD_URL,CLOUD_KEY);
  else cloudStatus('⚠️ โหลด Supabase SDK ไม่สำเร็จ');}
 catch(e){cloudStatus('⚠️ Supabase เริ่มต้นไม่สำเร็จ');console.error(e)}
+
+const PURCHASE_BUCKET='purchase-receipts';
+const purchaseStatus=m=>{const el=document.getElementById('purchaseCloudStatus');if(el)el.textContent=m};
+function legacyBackup(){
+ const key=LS+'_buys_backup';
+ if(!localStorage.getItem(key)&&S.buys.some(b=>!b.cloudId)){
+  try{localStorage.setItem(key,JSON.stringify(S.buys.filter(b=>!b.cloudId)))}catch(e){console.warn('Backup purchase history failed',e)}
+ }
+}
+async function uploadReceipt(dataUrl,uid){
+ if(!dataUrl||!dataUrl.startsWith('data:image/'))return null;
+ const blob=await (await fetch(dataUrl)).blob();
+ if(blob.size>10*1024*1024)throw Error('รูปมีขนาดเกิน 10 MB');
+ const path=uid+'/'+crypto.randomUUID()+'.jpg';
+ const {error}=await cloud.storage.from(PURCHASE_BUCKET).upload(path,blob,{contentType:'image/jpeg',upsert:false});
+ if(error)throw error;
+ return path;
+}
+async function signedReceipt(path){if(!path)return '';
+ const {data,error}=await cloud.storage.from(PURCHASE_BUCKET).createSignedUrl(path,3600);
+ if(error){console.warn('Signed receipt URL failed',error);return ''}
+ return data.signedUrl;
+}
+async function savePurchaseCloud(b,photo,forcedId){
+ if(!cloud||!cloudUser)throw Error('ยังไม่ได้เข้าสู่ระบบ Supabase');
+ const id=forcedId||crypto.randomUUID();
+ // A stable id allows safe retry without duplicating a purchase record.
+ const path=await uploadReceipt(photo,cloudUser.id);
+ const data={...b};delete data.ph;delete data.cloudId;delete data.photo_path;
+ const {error}=await cloud.from('purchase_records').upsert({id,user_id:cloudUser.id,data,photo_path:path},{onConflict:'id'});
+ if(error)throw error;
+ return {id,path,url:path?await signedReceipt(path):''};
+}
+async function refreshPurchases(){
+ if(!cloud||!cloudUser)return;
+ try{
+  legacyBackup();
+  purchaseStatus('☁️ กำลังโหลดประวัติซื้อเข้า...');
+  const {data,error}=await cloud.from('purchase_records').select('id,data,photo_path,created_at').order('created_at',{ascending:false}).limit(500);
+  if(error)throw error;
+  const remote=await Promise.all(data.map(async r=>({...r.data,cloudId:r.id,photo_path:r.photo_path,ph:await signedReceipt(r.photo_path)})));
+  const local=S.buys.filter(b=>!b.cloudId);
+  S.buys=[...remote,...local];
+  save();biList();
+  purchaseStatus('☁️ ประวัติบน Supabase '+remote.length+' รายการ'+(local.length?' · มีประวัติเก่าในเครื่อง '+local.length+' รายการ กดนำเข้าเพื่อซิงค์':'')+' · รูปพร้อมดูข้ามเครื่อง');
+ }catch(e){purchaseStatus('⚠️ โหลดประวัติซื้อเข้าไม่สำเร็จ: '+e.message);console.error(e)}
+}
+async function importLegacyPurchases(){
+ if(!cloud||!cloudUser)return alert('กรุณาเข้าสู่ระบบคลาวด์ก่อน');
+ const key=LS+'_buys_backup';
+ let backup=[];try{backup=JSON.parse(localStorage.getItem(key)||'[]')}catch(e){}
+ const pending=[...backup,...S.buys.filter(b=>!b.cloudId)];
+ const unique=new Map();pending.forEach(b=>{const k=[b.id,b.d,b.q,b.p,b.s].join('|');if(!unique.has(k))unique.set(k,b)});
+ if(!unique.size)return alert('ไม่มีประวัติซื้อเข้าเก่าที่ต้องนำเข้า');
+ if(!confirm('นำเข้าประวัติเก่า '+unique.size+' รายการไป Supabase?\nจะไม่บวกสต๊อกซ้ำ และจะเก็บข้อมูลสำรองในเครื่องไว้'))return;
+ let ok=0,failed=0;
+ purchaseStatus('☁️ กำลังนำเข้าประวัติซื้อเข้าเก่า...');
+ for(const [keyValue,b] of unique){
+  try{
+   // Deterministic ID per user and legacy record to prevent duplicates on repeated imports.
+   const bytes=new TextEncoder().encode(cloudUser.id+'|'+keyValue);
+   const hash=await crypto.subtle.digest('SHA-256',bytes);
+   const h=[...new Uint8Array(hash)].slice(0,16).map(x=>x.toString(16).padStart(2,'0')).join('');
+   const uuid=h.slice(0,8)+'-'+h.slice(8,12)+'-4'+h.slice(13,16)+'-a'+h.slice(17,20)+'-'+h.slice(20,32);
+   const existing=await cloud.from('purchase_records').select('id').eq('id',uuid).maybeSingle();
+   if(existing.error)throw existing.error;
+   if(!existing.data)await savePurchaseCloud(b,typeof b.ph==='string'&&b.ph.startsWith('data:image/')?b.ph:'',uuid);
+   ok++;
+  }catch(e){failed++;console.warn('Import purchase failed',e)}
+ }
+ await refreshPurchases();
+ alert('นำเข้าสำเร็จ '+ok+' รายการ · ไม่สำเร็จ '+failed+' รายการ\nเก็บสำรองเดิมไว้ในเบราว์เซอร์แล้ว');
+}
 window.stockCloudReady=true;
 function stockRows(){return [...S.V.map(x=>({id:String(x.id),kind:'vegetable',data:x,updated_by:cloudUser.id})),...S.G.map(x=>({id:String(x.id),kind:'grocery',data:x,updated_by:cloudUser.id}))]}
 async function uploadStock(){
@@ -2278,7 +2374,7 @@ async function refreshCloud(){
    cloudReady=true;await uploadStock();
   }
   try{acat();adm();vlist();cartList();biOpts();badge();}catch(e){console.warn(e)}
-  toast('☁️ สต๊อกพร้อมใช้งาน');
+  toast('☁️ สต๊อกพร้อมใช้งาน');await refreshPurchases();
  }catch(e){cloudStatus('⚠️ โหลดข้อมูลไม่สำเร็จ: '+e.message);toast('⚠️ โหลดสต๊อกไม่สำเร็จ');return}
  finally{cloudLoading=false;cloudReady=true}
 }
