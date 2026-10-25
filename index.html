@@ -209,7 +209,7 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
 .bom-control .qty{display:flex;flex:0 0 auto}
 .qty button{position:relative;z-index:2;touch-action:manipulation}
 .sent-row{opacity:.42;filter:grayscale(.45);transition:.2s}
-.sent-row .nm::after{content:" ส่งแล้ว";display:inline-block;margin-left:5px;padding:2px 6px;border-radius:6px;background:#e0e0e0;color:#616161;font-size:.68rem;font-weight:700}
+.sent-row .nm::after{content:" เตรียมส่ง";display:inline-block;margin-left:5px;padding:2px 6px;border-radius:6px;background:#e0e0e0;color:#616161;font-size:.68rem;font-weight:700}
 .line-tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .line-tools .btn{flex:1 1 120px}
 .store-input{margin:5px 0 0!important;padding:6px 8px!important;font-size:.78rem!important}
@@ -243,6 +243,13 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
  .dash-pair{grid-template-columns:1fr}
  .aff-slide-item{flex-basis:88%}
 }
+
+/* Compact vegetable cards on phones: quantity below product details */
+.veg-main{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start}
+.veg-top{display:flex;gap:8px;align-items:flex-start;min-width:0}.veg-info{min-width:0;flex:1}.veg-photo{flex:0 0 48px}.veg-quantity{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px}
+.veg-quantity .wbox{margin:0}.veg-quantity .moneybar{margin:0}
+@media(max-width:520px){.veg-main{grid-template-columns:minmax(0,1fr);}.veg-quantity{grid-column:1}.veg-main .order-photo{float:left}.veg-main .veg-info{width:100%}.veg-quantity .qty{display:inline-flex}.veg-quantity .moneybar{display:flex;flex-wrap:wrap}}
+.order-history-item{border-bottom:1px dashed #ddd;padding:9px 0}.order-history-item:last-child{border:0}
 </style>
 </head>
 <body>
@@ -396,7 +403,14 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
     <div class="slhd"><b>🔥 แนะนำ · ลดราคา &amp; ผักพื้นบ้าน</b></div>
     <div class="slider" id="vslider"></div><div class="dots" id="vdots"></div>
   </div>
-  <div id="cartBox"></div>
+  <div class="card" id="buyerOrderPanel"><div class="nm">👤 ข้อมูลผู้สั่งซื้อ</div>
+ <div class="mini" id="buyerAuthStatus">กรุณาเข้าสู่ระบบคลาวด์เพื่อบันทึกประวัติคำสั่งซื้อ</div>
+ <div class="f"><label>ชื่อผู้สั่ง (แสดงในข้อความ LINE)</label><input id="orderBuyerName" placeholder="ชื่อผู้สั่งซื้อ" autocomplete="name"></div>
+ <div class="mini">LINE Login ต้องตั้งค่า LINE Developers เพิ่มเติม ตอนนี้ระบบยังไม่สามารถยืนยันตัวตน LINE หรือทราบว่าใครเป็นผู้ส่งข้อความจริงได้</div>
+ <button class="btn gh sm" onclick="saveBuyerProfile()">💾 บันทึกชื่อผู้สั่ง</button>
+ </div>
+ <div id="cartBox"></div>
+ <div class="card"><div class="nm">📋 ประวัติรายการสั่งซื้อบนคลาวด์</div><div class="mini">สถานะ “เตรียมส่ง LINE” หมายถึงสร้างรายการแล้ว ไม่ได้ยืนยันว่า LINE ส่งสำเร็จ</div><div id="orderHistory"><div class="mini">เข้าสู่ระบบเพื่อดูประวัติ</div></div><button class="btn gh sm" onclick="refreshOrderHistory()">🔄 โหลดประวัติสั่งซื้อ</button></div>
   <div class="card">
     <div class="nm">เลือกรายการและร้านที่จะส่งซื้อ</div>
     <div class="mini">ติ๊กได้หลายรายการ และกำหนดร้านของแต่ละรายการ ระบบจะจัดกลุ่มรายการตามร้านให้อัตโนมัติ</div>
@@ -1482,7 +1496,7 @@ function vlist(){
   return '<div class="card '+(x.clr>0?'hl':(x.pd?'drop':'ok'))+'">'
    +'<div class="row nowrap" style="align-items:flex-start">'
    +thumbHTML
-   +'<div class="grow"><div class="nm">'+x.n+'</div>'
+   +'<div class="veg-info"><div class="nm">'+x.n+'</div>'
    +'<div style="margin:3px 0"><span class="tag '+(x.t===1?'t-r':(x.t===-1?'t-g':'t-b'))+'">'+tr[0]+'</span>'
    +(x.clr>0?'<span class="tag t-o">🏷️ ลดระบาย</span>':'')
    +(x.src==='home'?'<span class="tag t-g">🌱 ผักบ้าน</span>':'')+'</div>'
@@ -1492,7 +1506,7 @@ function vlist(){
    +(q>0?('<div class="mini" style="color:var(--g);font-weight:700;margin-top:2px">🛒 ในตะกร้า '+fmt(q)+' '+x.u
      +' = ฿'+(pz(x)*q).toFixed(0)+(prepOf(x.id)?(' · ✂️ '+PREP[prepOf(x.id)]):'')+'</div>'):'')
    +'</div>'
-   +'<div style="flex:0 0 auto;text-align:right">'+moneyBar+wBar+'</div></div>'
+   +'</div><div class="veg-quantity">'+wBar+moneyBar+'</div></div>'
    +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">'
    +'<button class="modebtn '+(md==='weight'?'on':'')+'" onclick="setMode(\''+x.id+'\',\'weight\')">⚖️ ตามน้ำหนัก</button>'
    +'<button class="modebtn money '+(md==='money'?'on':'')+'" onclick="setMode(\''+x.id+'\',\'money\')">💰 ระบุยอดเงิน</button>'
@@ -1546,7 +1560,7 @@ function cartList(){
    +'<button class="tr" onclick="delCart(\''+id+'\')">✕</button></div></div>')});
  var html='<div class="bar b"><div style="font-size:.78rem;opacity:.85">รายการสำหรับส่งซื้อหลายร้าน</div>'
   +'<div class="big">'+selectedCount+' / '+ks.length+' รายการ</div>'
-  +'<div class="sub">ส่งแล้ว '+sentCount+' รายการ · รวมตะกร้า ฿'+total.toFixed(0)+'</div></div>';
+  +'<div class="sub">เตรียมส่ง '+sentCount+' รายการ · รวมตะกร้า ฿'+total.toFixed(0)+'</div></div>';
  Object.keys(groups).forEach(function(store){
   html+='<div class="card"><div class="row nowrap" style="margin-bottom:5px"><b>🏪 '+store+'</b>'
    +'<span class="mini">'+groups[store].length+' รายการ</span></div>'+groups[store].join('')+'</div>'});
@@ -1584,31 +1598,37 @@ function budgetMode(){askVal('💵 สั่งตามงบ','ระบุง
  vlist();cartList();badge();save();
  say('💵 จัดชุดผักในงบ ฿'+b,'ใช้ไป ฿'+(b-left).toFixed(0)+'\nเหลือ ฿'+left.toFixed(0)
   +'\nได้ '+Object.keys(S.cart).length+' รายการ')})}
-function toLine(){
+async function toLine(){
+ if(!cloud||!cloudUser){toast('กรุณาเข้าสู่ระบบคลาวด์ก่อนสั่งซื้อ');return}
+ var buyer=(document.getElementById('orderBuyerName').value||'').trim();
+ if(!buyer){toast('กรุณาระบุชื่อผู้สั่งซื้อ');document.getElementById('orderBuyerName').focus();return}
  var ids=Object.keys(S.cart).filter(function(id){return lineIsPicked(id)});
  if(!ids.length){toast('กรุณาติ๊กรายการที่จะส่งก่อน');return}
- var groups={},grandTotal=0;
- ids.forEach(function(id){
-  var it=itm(id),order=S.cart[id];if(!it||!order)return;
+ var groups={},grandTotal=0,items=[];
+ ids.forEach(function(id){var it=itm(id),order=S.cart[id];if(!it||!order)return;
   var store=defaultBuyStore(it),cost=pz(it)*order.q,pp=prepOf(id);
   if(!groups[store])groups[store]={rows:[],total:0};
+  var row={id:id,name:it.n,quantity:order.q,unit:it.u,unit_price:pz(it),store:store,preparation:pp||null,total:cost};
+  items.push(row);
   groups[store].rows.push({id:id,text:it.n+' '+fmt(order.q)+' '+it.u+(pp?(' ('+PREP[pp]+')'):'')+' = ฿'+cost.toFixed(0)});
   groups[store].total+=cost;grandTotal+=cost;
  });
- var message='รายการสั่งซื้อหลายร้าน\nวันที่ '+today()+'\n';
- Object.keys(groups).forEach(function(store){
-  var group=groups[store];
-  message+='\nร้าน: '+store+'\n';
-  group.rows.forEach(function(row,index){message+=(index+1)+'. '+row.text+'\n'});
-  message+='รวมร้านนี้ ฿'+group.total.toFixed(0)+'\n';
- });
- message+='\nรวมทั้งหมด ฿'+grandTotal.toFixed(0);
- message+='\nผู้สั่ง: '+val('sName')+'\nโทร: '+val('sTel');
- ids.forEach(function(id){
-  S.sentLine[id]={sent:1,date:new Date().toLocaleString('th-TH')};
-  S.linePick[id]=0;
- });
- save();cartList();sendLine(message)}
+ if(!items.length)return;
+ var btn=document.querySelector('button[onclick="toLine()"]');if(btn)btn.disabled=true;
+ try{
+  var orderId=crypto.randomUUID();
+  var result=await cloud.from('purchase_orders').insert({id:orderId,user_id:cloudUser.id,buyer_name:buyer,items:items,total:grandTotal,status:'prepared'});
+  if(result.error)throw result.error;
+  var message='เลขที่คำสั่งซื้อ '+orderId.slice(0,8)+'\nรายการสั่งซื้อหลายร้าน\nวันที่ '+today()+'\nผู้สั่ง: '+buyer+'\n';
+  Object.keys(groups).forEach(function(store){var group=groups[store];message+='\nร้าน: '+store+'\n';group.rows.forEach(function(row,index){message+=(index+1)+'. '+row.text+'\n'});message+='รวมร้านนี้ ฿'+group.total.toFixed(0)+'\n'});
+  message+='\nรวมทั้งหมด ฿'+grandTotal.toFixed(0);
+  // Mark as prepared locally; do not claim LINE delivery because a share URL cannot confirm it.
+  ids.forEach(function(id){S.sentLine[id]={prepared:1,date:new Date().toLocaleString('th-TH'),orderId:orderId};S.linePick[id]=0});
+  save();cartList();await refreshOrderHistory();sendLine(message);
+  toast('บันทึกคำสั่งซื้อแล้ว กรุณาเลือกผู้รับใน LINE และกดส่ง');
+ }catch(e){console.error(e);alert('บันทึกคำสั่งซื้อไม่สำเร็จ: '+e.message+'\nยังไม่ได้เปิด LINE กรุณาลองใหม่')}
+ finally{if(btn)btn.disabled=false}
+}
 
 /* ========== 4 ป้าย ========== */
 var TH={g:['#1b5e20','#66bb6a','#fff','#c5e1a5'],o:['#bf360c','#ff9800','#fff','#ffe0b2'],
@@ -2273,6 +2293,32 @@ try{if(window.supabase?.createClient)cloud=window.supabase.createClient(CLOUD_UR
  else cloudStatus('⚠️ โหลด Supabase SDK ไม่สำเร็จ');}
 catch(e){cloudStatus('⚠️ Supabase เริ่มต้นไม่สำเร็จ');console.error(e)}
 
+
+function buyerStatus(message){const el=document.getElementById('buyerAuthStatus');if(el)el.textContent=message}
+async function loadBuyerProfile(){
+ if(!cloud||!cloudUser){buyerStatus('ยังไม่เข้าสู่ระบบคลาวด์');return}
+ const {data,error}=await cloud.from('buyers').select('display_name').eq('user_id',cloudUser.id).maybeSingle();
+ if(error){buyerStatus('โหลดผู้สั่งไม่สำเร็จ: '+error.message);return}
+ if(data?.display_name)document.getElementById('orderBuyerName').value=data.display_name;
+ buyerStatus('เข้าสู่ระบบ Supabase: '+cloudUser.email+' (ยังไม่ได้เชื่อม LINE Login)');
+}
+async function saveBuyerProfile(){
+ if(!cloud||!cloudUser)return alert('กรุณาเข้าสู่ระบบคลาวด์ก่อน');
+ const name=(document.getElementById('orderBuyerName').value||'').trim();
+ if(!name)return alert('กรุณากรอกชื่อผู้สั่ง');
+ const {error}=await cloud.from('buyers').upsert({user_id:cloudUser.id,display_name:name},{onConflict:'user_id'});
+ if(error)return alert('บันทึกชื่อไม่สำเร็จ: '+error.message);
+ toast('บันทึกชื่อผู้สั่งเรียบร้อย');
+}
+async function refreshOrderHistory(){
+ const el=document.getElementById('orderHistory');if(!el)return;
+ if(!cloud||!cloudUser){el.textContent='กรุณาเข้าสู่ระบบคลาวด์';return}
+ const {data,error}=await cloud.from('purchase_orders').select('id,buyer_name,total,status,created_at,items').order('created_at',{ascending:false}).limit(100);
+ if(error){el.textContent='โหลดประวัติไม่สำเร็จ: '+error.message;return}
+ if(!data.length){el.textContent='ยังไม่มีประวัติคำสั่งซื้อ';return}
+ el.innerHTML=data.map(o=>{const row=document.createElement('div');row.textContent='';return '<div class="order-history-item"><b>#'+o.id.slice(0,8)+'</b> · '+safeOrderText(o.buyer_name)+' · ฿'+Number(o.total).toFixed(0)+'<div class="mini">'+new Date(o.created_at).toLocaleString('th-TH')+' · '+(o.items?.length||0)+' รายการ · เตรียมส่ง LINE (ยังไม่ยืนยันการส่ง)</div></div>'}).join('');
+}
+function safeOrderText(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const PURCHASE_BUCKET='purchase-receipts';
 const purchaseStatus=m=>{const el=document.getElementById('purchaseCloudStatus');if(el)el.textContent=m};
 function legacyBackup(){
@@ -2400,7 +2446,7 @@ if(cloud)cloud.auth.onAuthStateChange((_event,session)=>{
  if(next?.id===cloudUser?.id)return;
  cloudUser=next;cloudReady=false;
  cloudStatus(cloudUser?'☁️ เข้าสู่ระบบแล้ว: '+cloudUser.email:'☁️ ยังไม่เชื่อมต่อ');
- if(cloudUser)setTimeout(refreshCloud,0);
+ if(cloudUser){setTimeout(refreshCloud,0);setTimeout(loadBuyerProfile,0);setTimeout(refreshOrderHistory,0)}else{buyerStatus('ยังไม่เข้าสู่ระบบคลาวด์');const h=document.getElementById('orderHistory');if(h)h.textContent='กรุณาเข้าสู่ระบบคลาวด์'}
 });
 </script>
 </body>
