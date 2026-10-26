@@ -1833,9 +1833,12 @@ function adm(){
    +'</div>'}).join(''):'<div class="emp"><i>🔍</i>ไม่พบรายการ</div>'}
 function setF(id,k,rv){var it=itm(id);if(!it)return;
  var n=parseFloat(String(rv).replace(/,/g,''));
- it[k]=isNaN(n)?0:Math.max(0,n);
+ if(!Number.isFinite(n)||n<0){toast('กรุณากรอกตัวเลขที่ถูกต้อง');adm();return}
+ it[k]=n;
  if(it.clr>=it.p)it.clr=0;
  save();adm();if(onPage(3))vlist();badge()}
+function stkSet(id,rv){setF(id,'s',rv);if(onPage(9))restock()}
+function stkAdj(id,delta){var it=itm(id);if(!it)return;stkSet(id,Math.max(0,Math.round((Number(it.s)+delta)*100)/100))}
 
 /* ========== เพิ่มสินค้าใหม่ ========== */
 function toggleNewStockForm(){
@@ -1921,6 +1924,9 @@ async function savePurchaseEntry(id,q,p,s,photo,fromRestock){
   const o=addBuy(id,q,p,s,saved.url||0);
   if(!o)throw Error('ไม่สามารถอัปเดตสต๊อก');
   S.buys[0].cloudId=saved.id;S.buys[0].photo_path=saved.path||null;
+  // A manually added restock request is fulfilled by a successful receipt.
+  S.restockAdd=S.restockAdd.filter(function(r){return r.id!==id});
+  S.restockHide=S.restockHide.filter(function(x){return x!==id});
   save();
   if(fromRestock){rsClose();restock()}else{biPhoto='';paintPhoto('buy','');biList();biHint()}
   say('✅ บันทึกซื้อเข้าแล้ว',o.it.n+' +'+q+' '+o.it.u+'\nสต๊อกใหม่ = '+o.it.s+' '+o.it.u+'\nข้อมูลและรูปอยู่บน Supabase');
@@ -2393,13 +2399,22 @@ async function importLegacyPurchases(){
 }
 window.stockCloudReady=true;
 function stockRows(){return [...S.V.map(x=>({id:String(x.id),kind:'vegetable',data:x,updated_by:cloudUser.id})),...S.G.map(x=>({id:String(x.id),kind:'grocery',data:x,updated_by:cloudUser.id}))]}
+let stockSyncInFlight=false,stockSyncQueued=false;
 async function uploadStock(){
  if(!cloud||!cloudUser||!cloudReady||cloudLoading)return;
- const rows=stockRows();if(!rows.length)return;
- cloudStatus('☁️ กำลังบันทึกสต๊อก...');
- const {error}=await cloud.from('stock_items').upsert(rows,{onConflict:'id'});
- if(error){cloudStatus('⚠️ บันทึกไม่สำเร็จ: '+error.message);toast('⚠️ ซิงค์สต๊อกไม่สำเร็จ');return}
- cloudStatus('☁️ บันทึกสต๊อกแล้ว: '+cloudUser.email);
+ if(stockSyncInFlight){stockSyncQueued=true;return}
+ stockSyncInFlight=true;
+ try{
+  do{
+   stockSyncQueued=false;
+   const rows=stockRows();if(!rows.length)break;
+   cloudStatus('☁️ กำลังบันทึกสต๊อก...');
+   const {error}=await cloud.from('stock_items').upsert(rows,{onConflict:'id'});
+   if(error)throw error;
+  }while(stockSyncQueued);
+  cloudStatus('☁️ บันทึกสต๊อกแล้ว: '+cloudUser.email);
+ }catch(e){cloudStatus('⚠️ บันทึกสต๊อกไม่สำเร็จ: '+e.message);toast('⚠️ ซิงค์สต๊อกไม่สำเร็จ');console.error(e)}
+ finally{stockSyncInFlight=false}
 }
 function scheduleCloudSave(){if(!cloudReady||!cloudUser||cloudLoading)return;
  clearTimeout(cloudTimer);cloudTimer=setTimeout(uploadStock,900)}
