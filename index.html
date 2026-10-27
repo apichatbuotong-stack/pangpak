@@ -1429,9 +1429,10 @@ function vfilters(){
   +'<div class="chip sm2 '+(vsrcF==='home'?'on':'')+'" onclick="vsrcF=\'home\';vfilters();vlist()">🌱 เฉพาะผักบ้าน/ปลูกเอง</div>'
   +'<div class="chip sm2 gold '+(vsrcF==='clr'?'on':'')+'" onclick="vsrcF=\'clr\';vfilters();vlist()">🏷️ เฉพาะผักลดราคา</div>';
  box.innerHTML='<div class="wchips">'+r1+'</div><div class="wchips">'+r2+'</div><div class="wchips">'+r3+'</div>'}
-function setMode(id,m){mode[id]=(mode[id]===m)?'':m;vlist()}
+function canOrder(it){return !!(it&&it.ok===1&&Number(it.s)>0)}
+function setMode(id,m){var it=itm(id);if(!canOrder(it)){toast('สินค้าหมดสต๊อก ไม่สามารถสั่งได้');return}mode[id]=(mode[id]===m)?'':m;vlist()}
 function moneyAdd(id,amt){
- var x=itm(id);if(!x)return;
+ var x=itm(id);if(!canOrder(x)){toast('สินค้าหมดสต๊อก ไม่สามารถสั่งได้');return}
  var pr=pz(x),q=Math.round(amt/pr*10)/10;
  if(q<=0)q=.1;
  S.cart[id]={q:q};
@@ -1449,6 +1450,7 @@ function wSet(id,rv){
  var it=itm(id);if(!it)return;
  var n=parseFloat(String(rv).replace(/,/g,''));
  n=isNaN(n)?0:Math.max(0,Math.round(n*10)/10);
+ if(n>0&&!canOrder(it)){toast('สินค้าหมดสต๊อก ไม่สามารถสั่งได้');return}
  if(n<=0){
   delete S.cart[id];
   delete S.linePick[id];
@@ -1469,8 +1471,10 @@ function vlist(){
  else if(vtrendF==='eq')L=L.filter(function(x){return x.t===0});
  if(vsrcF==='home')L=L.filter(function(x){return x.src==='home'});
  else if(vsrcF==='clr')L=L.filter(function(x){return x.clr>0});
+ L.sort(function(a,b){return Number(a.s<=0)-Number(b.s<=0)});
  box.innerHTML=L.length?L.map(function(x){
   var c=S.cart[x.id],q=c?c.q:0,tr=TR[String(x.t)]||TR['0'],md=mode[x.id]||'';
+  if(x.s<=0)md='';
   var moneyBar=(md==='money')?('<div class="moneybar">'
    +[5,10,20,50].map(function(a){return '<button class="mbtn" onclick="moneyAdd(\''+x.id+'\','+a+')">'+a+'.-</button>'}).join('')
    +'<button class="mbtn alt" onclick="moneyCustom(\''+x.id+'\')">อื่นๆ</button></div>'):'';
@@ -1508,6 +1512,7 @@ function vlist(){
      +' = ฿'+(pz(x)*q).toFixed(0)+(prepOf(x.id)?(' · ✂️ '+PREP[prepOf(x.id)]):'')+'</div>'):'')
    +'</div>'
    +'</div><div class="veg-quantity">'+wBar+moneyBar+'</div></div>'
+   +(x.s<=0?'<div class="mini" style="color:var(--rd);font-weight:700;margin-top:6px">⛔ สินค้าหมดชั่วคราว ไม่เปิดรับสั่งซื้อ</div>':'')
    +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">'
    +'<button class="modebtn '+(md==='weight'?'on':'')+'" onclick="setMode(\''+x.id+'\',\'weight\')">⚖️ ตามน้ำหนัก</button>'
    +'<button class="modebtn money '+(md==='money'?'on':'')+'" onclick="setMode(\''+x.id+'\',\'money\')">💰 ระบุยอดเงิน</button>'
@@ -1572,6 +1577,7 @@ function delCart(id){
  save();cartList();vlist();vslideRender();badge();toast('ลบ '+it.n+' แล้ว')}
 function qc(id,d){
  var it=itm(id);if(!it)return;
+ if(d>0&&!canOrder(it)){toast('สินค้าหมดสต๊อก ไม่สามารถสั่งได้');return}
  var cur=S.cart[id]?S.cart[id].q:0;
  var nq=Math.max(0,Math.round((cur+d*stepOf(it))*10)/10);
  if(nq<=0){
@@ -1588,7 +1594,7 @@ function clearCart(){if(!Object.keys(S.cart).length){toast('ตะกร้า�
   vlist();cartList();badge();save();toast('🧹 ล้างแล้ว')})}
 function budgetMode(){askVal('💵 สั่งตามงบ','ระบุงบประมาณ (บาท)','500',function(inp){
  var b=parseFloat(inp);if(!b||b<=0)return;
- var pool=S.V.filter(function(x){return x.ok===1&&x.core}).sort(function(a,c){return pz(a)-pz(c)});
+ var pool=S.V.filter(function(x){return canOrder(x)&&x.core}).sort(function(a,c){return pz(a)-pz(c)});
  S.cart={};S.linePick={};S.buyStore={};S.sentLine={};var left=b;
  pool.forEach(function(x){var st=(x.u==='กก.')?1:2,c=pz(x)*st;
   if(left>=c&&Object.keys(S.cart).length<10){
@@ -1604,6 +1610,8 @@ async function toLine(){
  var buyer=(document.getElementById('orderBuyerName').value||'').trim();
  if(!buyer){toast('กรุณาระบุชื่อผู้สั่งซื้อ');document.getElementById('orderBuyerName').focus();return}
  var ids=Object.keys(S.cart).filter(function(id){return lineIsPicked(id)});
+ var unavailable=ids.filter(function(id){return !canOrder(itm(id))});
+ if(unavailable.length){toast('มีสินค้าหมดสต๊อกในตะกร้า กรุณานำออกก่อนส่ง');return}
  if(!ids.length){toast('กรุณาติ๊กรายการที่จะส่งก่อน');return}
  var groups={},grandTotal=0,items=[];
  ids.forEach(function(id){var it=itm(id),order=S.cart[id];if(!it||!order)return;
@@ -1781,6 +1789,7 @@ function adm(){
  else if(af==='DROP')L=L.filter(function(x){return !!x.pd});
  else if(af!=='ALL')L=L.filter(function(x){return x.c===af});
  if(q)L=L.filter(function(x){return x.n.indexOf(q.trim())>-1});
+ L.sort(function(a,b){return Number(a.s<=0)-Number(b.s<=0)});
  var low=S.V.filter(isLow).length,lg=S.G.filter(lowG).length;
  var worth=ALL.reduce(function(a,x){return a+(x.s*(parseFloat(x.bp)||0))},0);
  document.getElementById('stkSum').innerHTML='<div class="bar '+((low+lg)?'o':'')+'">'
