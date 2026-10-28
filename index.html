@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Verify purchase date and image fixes -->
 <html lang="th">
 <head>
 <meta charset="UTF-8">
@@ -523,7 +524,7 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
     <div><button class="btn gh" style="margin:0" onclick="af='LOW';acat();adm()">⚠️ ใกล้หมด</button></div>
   </div>
   <div class="wchips" id="acat"></div>
-  <div id="adm"></div>
+  <div id="adm"></div><div id="archivedStockPanel" class="card"></div>
   <div class="aff-slide-wrap">
     <div class="aff-slide-title"><b>🛒 สินค้าแนะนำสำหรับร้านค้า</b><button class="btn gh sm" onclick="go(5,null)">ดูทั้งหมด</button></div>
     <div class="mini" style="margin-bottom:7px">สินค้าใช้ประจำจาก Big C, Makro และ 7-Eleven</div>
@@ -548,7 +549,7 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
       <button class="btn gh" id="buyClrBtn" style="display:none" onclick="camReset('buy')">🗑️ ลบรูป</button></div>
     <button class="btn" onclick="saveBuy()">💾 บันทึก &amp; อัปเดตราคาซื้อ</button>
   </div>
-  <h2>📜 ประวัติการซื้อเข้า</h2><div class="card mini" id="purchaseCloudStatus">☁️ กรุณาเข้าสู่ระบบคลาวด์เพื่อซิงค์ประวัติและรูป</div><button class="btn gh" onclick="importLegacyPurchases()">⬆️ นำเข้าประวัติซื้อเข้าเก่าจากเครื่องนี้</button><div id="bilist"></div>
+  <h2>📜 ประวัติการซื้อเข้า</h2><div class="card mini" id="purchaseCloudStatus">☁️ กรุณาเข้าสู่ระบบคลาวด์เพื่อซิงค์ประวัติและรูป</div><button class="btn gh" onclick="importLegacyPurchases()">⬆️ นำเข้าประวัติซื้อเข้าเก่าจากเครื่องนี้</button><div class="card"><div class="f2"><div class="f"><label>ตั้งแต่วันที่ซื้อ</label><input type="date" id="buyDateFrom" onchange="biList()"></div><div class="f"><label>ถึงวันที่ซื้อ</label><input type="date" id="buyDateTo" onchange="biList()"></div></div><button class="btn gh sm" onclick="document.getElementById('buyDateFrom').value='';document.getElementById('buyDateTo').value='';biList()">ล้างตัวกรองวันที่</button></div><div id="bilist"></div>
   <div class="aff-slide-wrap">
     <div class="aff-slide-title"><b>🛒 สินค้าแนะนำสำหรับร้านค้า</b><button class="btn gh sm" onclick="go(5,null)">ดูทั้งหมด</button></div>
     <div class="mini" style="margin-bottom:7px">สินค้าใช้ประจำจาก Big C, Makro และ 7-Eleven</div>
@@ -614,7 +615,7 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
 <!-- 12 สรุปราคาซื้อขายและกำไร -->
 <section id="p12" class="page">
   <h2>📈 สรุปราคาซื้อขายและกำไร</h2>
-  <div id="priceProfitSummary"></div>
+  <div class="card"><div class="mini">เลือกช่วงวันที่ซื้อเพื่อดูต้นทุนรับเข้าและกำไรคาดการณ์ของสินค้าที่ซื้อในช่วงนั้น (ไม่ใช่กำไรขายจริง)</div><div class="f2"><div class="f"><label>ตั้งแต่วันที่ซื้อ</label><input type="date" id="profitDateFrom" onchange="priceProfitReport()"></div><div class="f"><label>ถึงวันที่ซื้อ</label><input type="date" id="profitDateTo" onchange="priceProfitReport()"></div></div><button class="btn gh sm" onclick="document.getElementById('profitDateFrom').value='';document.getElementById('profitDateTo').value='';priceProfitReport()">ล้างตัวกรองวันที่</button></div><div id="priceProfitSummary"></div>
   <div class="card">
     <div class="f2">
       <div class="f">
@@ -1054,8 +1055,8 @@ function paintPhoto(p,d){var im=document.getElementById(p+'Img');if(!im)return;
  document.getElementById(p+'CamBtn').textContent=d?'📷 ถ่ายใหม่':'📷 เปิดกล้องถ่ายรูป';
  document.getElementById(p+'ClrBtn').style.display=d?'block':'none'}
 function camReset(t){if(t==='buy'){biPhoto='';paintPhoto('buy','')}else{vpPhoto='';paintPhoto('vp','')}}
-function lbShow(s){if(!s||s.length<100)return;
- document.getElementById('lbImg').src=s;document.getElementById('lbImg').classList.add('on')}
+function lbShow(s){if(!s||typeof s!=='string'||!(s.startsWith('data:image/')||s.startsWith('https://')))return;
+ document.getElementById('lbImg').src=s;document.getElementById('lb').classList.add('on')}
 
 /* ========== SLIDER ========== */
 var slideIds=[],slT=null,slIdx=0;
@@ -1461,7 +1462,7 @@ function wSet(id,rv){
  vlist();cartList();badge();save()}
 function vlist(){
  var box=document.getElementById('vlist');if(!box)return;
- var L=S.V.filter(function(x){return x.ok===1});
+ var L=S.V.filter(function(x){return x.ok===1&&!x.archived});
  if(vcatF!=='all')L=L.filter(function(x){return x.c===vcatF});
  if(vtrendF==='down')L=L.filter(function(x){return x.t===-1||x.clr>0||x.pd});
  else if(vtrendF==='up')L=L.filter(function(x){return x.t===1});
@@ -1775,7 +1776,10 @@ function adm(){
  dropBox();
  var box=document.getElementById('adm');if(!box)return;
  var q=(document.getElementById('stkQ')||{}).value||'';
- var ALL=S.V.concat(S.G),L=ALL.slice();
+ var ALL=S.V.concat(S.G).filter(function(x){return !x.archived}),L=ALL.slice();
+ var archived=S.V.concat(S.G).filter(function(x){return x.archived});
+ var archivedPanel=document.getElementById('archivedStockPanel');
+ if(archivedPanel)archivedPanel.innerHTML=archived.length?'<details><summary>🗃️ รายการเลิกขาย '+archived.length+' รายการ (กดเพื่อดูและนำกลับ)</summary>'+archived.map(function(x){return '<div class="row"><span class="grow">'+htmlSafe(x.n)+' ('+htmlSafe(x.u)+')</span><button class="btn gh sm" onclick="restoreStockItem(\''+x.id+'\')">นำกลับมาใช้งาน</button></div>'}).join('')+'</details>':'';
  if(af==='LOW')L=L.filter(function(x){return isShop(x.id)?isLow(x):lowG(x)});
  else if(af==='DROP')L=L.filter(function(x){return !!x.pd});
  else if(af!=='ALL')L=L.filter(function(x){return x.c===af});
@@ -1828,9 +1832,27 @@ function adm(){
     +(x.clr>0?('<div class="mini" style="margin-top:5px;padding-left:29px">ราคาลด <b style="color:var(--rd);font-size:1rem">฿'+x.clr+'</b>'
       +' / '+x.u+' (ลด '+Math.round((1-x.clr/x.p)*100)+'%)</div>'):'')
     +'</div>'):'')
+   +'<div class="row" style="margin-top:8px;gap:7px"><button class="btn gh sm" onclick="editStockInfo(\''+x.id+'\')">✏️ แก้ชื่อ/หน่วย</button><button class="btn r sm" onclick="archiveStockItem(\''+x.id+'\')">🗃️ เลิกขาย</button></div>'
    +'<div class="row nowrap" style="margin-top:7px"><span class="mini">จุดสั่งซื้อ (แจ้งเตือนเมื่อต่ำกว่า)</span>'
    +'<input class="pin2" type="number" min="0" step="0.1" value="'+x.mn+'" onchange="setF(\''+x.id+'\',\'mn\',this.value)"></div>'
    +'</div>'}).join(''):'<div class="emp"><i>🔍</i>ไม่พบรายการ</div>'}
+function editStockInfo(id){
+ var it=itm(id);if(!it||!cloudUser||!cloudReady)return alert('กรุณาเข้าสู่ระบบคลาวด์ก่อน');
+ var name=prompt('แก้ไขชื่อสินค้า',it.n);if(name===null)return;name=name.trim();
+ if(!name)return alert('ชื่อสินค้าห้ามว่าง');
+ if(S.V.concat(S.G).some(function(x){return x.id!==id&&!x.archived&&x.n.trim()===name}))return alert('ชื่อสินค้าซ้ำ');
+ var unit=prompt('แก้ไขหน่วยนับ (เช่น กก., กำ, ถุง)',it.u);if(unit===null)return;unit=unit.trim();
+ if(!unit)return alert('หน่วยนับห้ามว่าง');
+ it.n=name;it.u=unit;save();adm();biOpts();if(onPage(3))vlist();toast('แก้ไขข้อมูลสินค้าแล้ว')
+}
+function restoreStockItem(id){var it=itm(id);if(!it||!cloudUser||!cloudReady)return alert('กรุณาเข้าสู่ระบบคลาวด์ก่อน');it.archived=false;it.ok=0;save();adm();toast('นำรายการกลับมาแล้ว กรุณาตรวจจำนวนและเปิดขายอีกครั้ง')}
+function archiveStockItem(id){
+ var it=itm(id);if(!it||!cloudUser||!cloudReady)return alert('กรุณาเข้าสู่ระบบคลาวด์ก่อน');
+ if(!confirm('เลิกขาย '+it.n+'? สินค้าจะถูกซ่อน แต่เก็บประวัติและข้อมูลไว้บน Supabase'))return;
+ it.archived=true;it.ok=0;delete S.cart[id];
+ S.restockAdd=S.restockAdd.filter(function(r){return r.id!==id});
+ save();adm();if(onPage(3))vlist();badge();toast('เก็บสินค้าเข้ารายการเลิกขายแล้ว')
+}
 function setF(id,k,rv){var it=itm(id);if(!it)return;
  var n=parseFloat(String(rv).replace(/,/g,''));
  it[k]=isNaN(n)?0:Math.max(0,n);
@@ -1905,7 +1927,7 @@ function addBuy(id,q,p,s,ph){
  var oldBuy=parseFloat(it.bp)||0;
  if(p>0)it.bp=p;
  S.buys.unshift({id:id,n:it.n,c:it.c,u:it.u,q:q,p:p,sell:it.p,s:s,
-  d:new Date().toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'}),ph:ph||0});
+  d:new Date().toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'}),purchased_at:new Date().toISOString(),ph:ph||0});
  if(S.buys.length>150)S.buys.length=150;
  save();badge();return {it:it,oldBuy:oldBuy,buyPrice:p}}
 let purchaseBusy=false;
@@ -1915,7 +1937,7 @@ async function savePurchaseEntry(id,q,p,s,photo,fromRestock){
  purchaseBusy=true;
  try{
   const it=itm(id);if(!it)throw Error('ไม่พบสินค้า');
-  const purchase={id:id,n:it.n,c:it.c,u:it.u,q:q,p:p,sell:it.p,s:s,d:new Date().toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'})};
+  const purchase={id:id,n:it.n,c:it.c,u:it.u,q:q,p:p,sell:it.p,s:s,d:new Date().toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'}),purchased_at:new Date().toISOString()};
   const saved=await savePurchaseCloud(purchase,photo);
   // Only update stock after the purchase has been safely stored in Supabase.
   const o=addBuy(id,q,p,s,saved.url||0);
@@ -1933,14 +1955,28 @@ function saveBuy(){var id=val('biV'),q=parseFloat(val('biQ')),p=parseFloat(val('
  if(!q||q<=0){toast('กรอกจำนวนให้ถูกต้อง');return}
  if(!biPhoto){ask('📷 ยังไม่มีรูป','บันทึกโดยไม่มีรูปหรือไม่?',function(){doSaveBuy(id,q,p,s)});return}
  doSaveBuy(id,q,p,s)}
+function purchaseDateKey(b){
+ if(b.purchased_at){var iso=String(b.purchased_at).slice(0,10);if(/^\d{4}-\d{2}-\d{2}$/.test(iso))return iso}
+ if(b.cloudCreatedAt){var parsed=new Date(b.cloudCreatedAt);if(!isNaN(parsed))return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).format(parsed)}
+ var t=String(b.d||'').trim(),m=t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+ if(!m)return '';
+ var y=Number(m[3]);if(y>=2400)y-=543;else if(y<100)y=(y>=40?1957+y:2000+y);
+ if(y<2000||y>2100)return '';
+ return String(y).padStart(4,'0')+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0')
+}
+function purchaseInRange(b,from,to){var d=purchaseDateKey(b);return !((from||to)&&(!d||(from&&d<from)||(to&&d>to)))}
+function htmlSafe(t){return String(t??'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function biList(){biOpts();
  var box=document.getElementById('bilist');if(!box)return;
- if(!S.buys.length){box.innerHTML='<div class="emp"><i>📭</i>ยังไม่มีประวัติ</div>';return}
- var tot=S.buys.reduce(function(a,b){return a+b.q*b.p},0);
+ var from=val('buyDateFrom'),to=val('buyDateTo');
+ if(from&&to&&from>to){box.innerHTML='<div class="emp">วันเริ่มต้นต้องไม่เกินวันสิ้นสุด</div>';return}
+ var shown=S.buys.map(function(b,i){return {b:b,i:i}}).filter(function(x){return purchaseInRange(x.b,from,to)});
+ if(!shown.length){box.innerHTML='<div class="emp"><i>📭</i>ไม่พบประวัติในช่วงวันที่เลือก</div>';return}
+ var tot=shown.reduce(function(a,x){return a+x.b.q*x.b.p},0);
  box.innerHTML='<div class="bar b"><div style="font-size:.78rem;opacity:.85">มูลค่าซื้อเข้าสะสม</div>'
-  +'<div class="big">฿'+tot.toFixed(0)+'</div><div class="sub">'+S.buys.length+' รายการ</div></div>'
- +S.buys.map(function(b,i){
-  var th=(typeof b.ph==='string'&&b.ph.length>100)
+  +'<div class="big">฿'+tot.toFixed(0)+'</div><div class="sub">'+shown.length+' รายการตามช่วงวันที่</div></div>'
+ +shown.map(function(x){var b=x.b,i=x.i;
+  var th=(typeof b.ph==='string'&&(b.ph.startsWith('data:image/')||b.ph.startsWith('https://')))
    ?'<img class="pthumb" src="'+b.ph+'" onclick="lbShow(S.buys['+i+'].ph)">':'<div class="nophoto">📷</div>';
   return '<div class="card"><div class="row nowrap">'+th
    +'<div class="grow"><div class="nm">'+b.n+'</div>'
@@ -2146,8 +2182,13 @@ function priceProfitReport(){
  var box=document.getElementById('priceProfitTable');
  if(!summary||!box)return;
  var cat=val('priceProfitCat')||'ALL';
+ var dateFrom=val('profitDateFrom'),dateTo=val('profitDateTo');
+ if(dateFrom&&dateTo&&dateFrom>dateTo){summary.textContent='วันเริ่มต้นต้องไม่เกินวันสิ้นสุด';box.innerHTML='';return}
+ var periodBuys=S.buys.filter(function(b){return purchaseInRange(b,dateFrom,dateTo)});
+ var periodIds=new Set(periodBuys.map(function(b){return b.id}));
  var search=(val('priceProfitSearch')||'').trim().toLowerCase();
  var rows=S.V.concat(S.G).filter(function(it){
+  if((dateFrom||dateTo)&&!periodIds.has(it.id))return false;
   if(cat!=='ALL'&&it.c!==cat)return false;
   if(search&&it.n.toLowerCase().indexOf(search)===-1)return false;
   return true;
@@ -2164,7 +2205,9 @@ function priceProfitReport(){
  var totalCost=all.reduce(function(sum,it){return sum+(parseFloat(it.s)||0)*(parseFloat(it.bp)||0)},0);
  var totalSale=all.reduce(function(sum,it){return sum+(parseFloat(it.s)||0)*(parseFloat(it.p)||0)},0);
  var totalProfit=totalSale-totalCost;
- summary.innerHTML='<div class="bar">'
+ var periodCost=periodBuys.reduce(function(a,b){return a+(Number(b.q)||0)*(Number(b.p)||0)},0);
+ var periodPotential=periodBuys.reduce(function(a,b){return a+(Number(b.q)||0)*((Number(b.sell)||0)-(Number(b.p)||0))},0);
+ summary.innerHTML=(dateFrom||dateTo?'<div class="bar b"><div class="mini">ยอดซื้อเข้าในช่วงวันที่เลือก (จากประวัติซื้อเข้า)</div><div class="big">฿'+periodCost.toFixed(0)+'</div><div class="sub">'+periodBuys.length+' รายการ · กำไรคาดการณ์หากขายหมด ฿'+periodPotential.toFixed(0)+' (ไม่ใช่ยอดขายจริง)</div></div>':'')+'<div class="bar">'
   +'<div style="font-size:.78rem;opacity:.85">กำไรขั้นต้นที่คาดจากสต๊อกปัจจุบัน</div>'
   +'<div class="big">฿'+totalProfit.toFixed(0)+'</div>'
   +'<div class="sub">ต้นทุนสต๊อก ฿'+totalCost.toFixed(0)+' · มูลค่าขาย ฿'+totalSale.toFixed(0)+' · '+all.length+' รายการ</div>'
@@ -2358,7 +2401,7 @@ async function refreshPurchases(){
   purchaseStatus('☁️ กำลังโหลดประวัติซื้อเข้า...');
   const {data,error}=await cloud.from('purchase_records').select('id,data,photo_path,created_at').order('created_at',{ascending:false}).limit(500);
   if(error)throw error;
-  const remote=await Promise.all(data.map(async r=>({...r.data,cloudId:r.id,photo_path:r.photo_path,ph:await signedReceipt(r.photo_path)})));
+  const remote=await Promise.all(data.map(async r=>({...r.data,cloudId:r.id,photo_path:r.photo_path,ph:await signedReceipt(r.photo_path),cloudCreatedAt:r.created_at})));
   const local=S.buys.filter(b=>!b.cloudId);
   S.buys=[...remote,...local];
   save();biList();
