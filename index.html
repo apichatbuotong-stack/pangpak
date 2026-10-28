@@ -523,7 +523,7 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
     <div><button class="btn gh" style="margin:0" onclick="af='LOW';acat();adm()">⚠️ ใกล้หมด</button></div>
   </div>
   <div class="wchips" id="acat"></div>
-  <div id="adm"></div>
+  <div id="adm"></div><div id="archivedStockPanel" class="card"></div>
   <div class="aff-slide-wrap">
     <div class="aff-slide-title"><b>🛒 สินค้าแนะนำสำหรับร้านค้า</b><button class="btn gh sm" onclick="go(5,null)">ดูทั้งหมด</button></div>
     <div class="mini" style="margin-bottom:7px">สินค้าใช้ประจำจาก Big C, Makro และ 7-Eleven</div>
@@ -1776,6 +1776,9 @@ function adm(){
  var box=document.getElementById('adm');if(!box)return;
  var q=(document.getElementById('stkQ')||{}).value||'';
  var ALL=S.V.concat(S.G).filter(function(x){return !x.archived}),L=ALL.slice();
+ var archived=S.V.concat(S.G).filter(function(x){return x.archived});
+ var archivedPanel=document.getElementById('archivedStockPanel');
+ if(archivedPanel)archivedPanel.innerHTML=archived.length?'<details><summary>🗃️ รายการเลิกขาย '+archived.length+' รายการ (กดเพื่อดูและนำกลับ)</summary>'+archived.map(function(x){return '<div class="row"><span class="grow">'+htmlSafe(x.n)+' ('+htmlSafe(x.u)+')</span><button class="btn gh sm" onclick="restoreStockItem(\''+x.id+'\')">นำกลับมาใช้งาน</button></div>'}).join('')+'</details>':'';
  if(af==='LOW')L=L.filter(function(x){return isShop(x.id)?isLow(x):lowG(x)});
  else if(af==='DROP')L=L.filter(function(x){return !!x.pd});
  else if(af!=='ALL')L=L.filter(function(x){return x.c===af});
@@ -1841,6 +1844,7 @@ function editStockInfo(id){
  if(!unit)return alert('หน่วยนับห้ามว่าง');
  it.n=name;it.u=unit;save();adm();biOpts();if(onPage(3))vlist();toast('แก้ไขข้อมูลสินค้าแล้ว')
 }
+function restoreStockItem(id){var it=itm(id);if(!it||!cloudUser||!cloudReady)return alert('กรุณาเข้าสู่ระบบคลาวด์ก่อน');it.archived=false;it.ok=0;save();adm();toast('นำรายการกลับมาแล้ว กรุณาตรวจจำนวนและเปิดขายอีกครั้ง')}
 function archiveStockItem(id){
  var it=itm(id);if(!it||!cloudUser||!cloudReady)return alert('กรุณาเข้าสู่ระบบคลาวด์ก่อน');
  if(!confirm('เลิกขาย '+it.n+'? สินค้าจะถูกซ่อน แต่เก็บประวัติและข้อมูลไว้บน Supabase'))return;
