@@ -1055,7 +1055,7 @@ function paintPhoto(p,d){var im=document.getElementById(p+'Img');if(!im)return;
  document.getElementById(p+'ClrBtn').style.display=d?'block':'none'}
 function camReset(t){if(t==='buy'){biPhoto='';paintPhoto('buy','')}else{vpPhoto='';paintPhoto('vp','')}}
 function lbShow(s){if(!s||typeof s!=='string'||!(s.startsWith('data:image/')||s.startsWith('https://')))return;
- document.getElementById('lbImg').src=s;document.getElementById('lbImg').classList.add('on')}
+ document.getElementById('lbImg').src=s;document.getElementById('lb').classList.add('on')}
 
 /* ========== SLIDER ========== */
 var slideIds=[],slT=null,slIdx=0;
@@ -1956,9 +1956,10 @@ function saveBuy(){var id=val('biV'),q=parseFloat(val('biQ')),p=parseFloat(val('
  doSaveBuy(id,q,p,s)}
 function purchaseDateKey(b){
  if(b.purchased_at){var iso=String(b.purchased_at).slice(0,10);if(/^\d{4}-\d{2}-\d{2}$/.test(iso))return iso}
+ if(b.cloudCreatedAt){var parsed=new Date(b.cloudCreatedAt);if(!isNaN(parsed))return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).format(parsed)}
  var t=String(b.d||'').trim(),m=t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
  if(!m)return '';
- var y=Number(m[3]);if(y>=2400)y-=543;else if(y<100)y+=2000;
+ var y=Number(m[3]);if(y>=2400)y-=543;else if(y<100)y=(y>=40?1957+y:2000+y);
  if(y<2000||y>2100)return '';
  return String(y).padStart(4,'0')+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0')
 }
@@ -1974,7 +1975,7 @@ function biList(){biOpts();
  box.innerHTML='<div class="bar b"><div style="font-size:.78rem;opacity:.85">มูลค่าซื้อเข้าสะสม</div>'
   +'<div class="big">฿'+tot.toFixed(0)+'</div><div class="sub">'+shown.length+' รายการตามช่วงวันที่</div></div>'
  +shown.map(function(x){var b=x.b,i=x.i;
-  var th=(typeof b.ph==='string'&&b.ph.length>100)
+  var th=(typeof b.ph==='string'&&(b.ph.startsWith('data:image/')||b.ph.startsWith('https://')))
    ?'<img class="pthumb" src="'+b.ph+'" onclick="lbShow(S.buys['+i+'].ph)">':'<div class="nophoto">📷</div>';
   return '<div class="card"><div class="row nowrap">'+th
    +'<div class="grow"><div class="nm">'+b.n+'</div>'
@@ -2399,7 +2400,7 @@ async function refreshPurchases(){
   purchaseStatus('☁️ กำลังโหลดประวัติซื้อเข้า...');
   const {data,error}=await cloud.from('purchase_records').select('id,data,photo_path,created_at').order('created_at',{ascending:false}).limit(500);
   if(error)throw error;
-  const remote=await Promise.all(data.map(async r=>({...r.data,cloudId:r.id,photo_path:r.photo_path,ph:await signedReceipt(r.photo_path)})));
+  const remote=await Promise.all(data.map(async r=>({...r.data,cloudId:r.id,photo_path:r.photo_path,ph:await signedReceipt(r.photo_path),cloudCreatedAt:r.created_at})));
   const local=S.buys.filter(b=>!b.cloudId);
   S.buys=[...remote,...local];
   save();biList();
