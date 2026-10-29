@@ -885,7 +885,7 @@ function trimPhotos(){var c=0,i;
  for(i=S.buys.length-1;i>=0&&c<6;i--)if(typeof S.buys[i].ph==='string'&&S.buys[i].ph.length>100){S.buys[i].ph=0;c++}
  for(i=S.vps.length-1;i>=0&&c<12;i--)if(typeof S.vps[i].ph==='string'&&S.vps[i].ph.length>100){S.vps[i].ph=0;c++}
  return c>0}
-function save(){if(window.stockCloudReady) scheduleCloudSave();for(var a=0;a<4;a++){
+function save(){if(window.stockCloudReady&&cloudUser) scheduleCloudSave();for(var a=0;a<4;a++){
  try{localStorage.setItem(LS,JSON.stringify(Object.assign({},S,{auth:0})));return true}
  catch(e){if(!trimPhotos()){toast('⚠️ พื้นที่เต็ม');return false}}}return false}
 
@@ -1431,8 +1431,9 @@ function vfilters(){
  box.innerHTML='<div class="wchips">'+r1+'</div><div class="wchips">'+r2+'</div><div class="wchips">'+r3+'</div>'}
 function setMode(id,m){mode[id]=(mode[id]===m)?'':m;vlist()}
 function moneyAdd(id,amt){
- var x=itm(id);if(!x)return;
+ var x=itm(id);if(!x||Number(x.s)<=0){toast('สินค้าหมดสต๊อก');return}
  var pr=pz(x),q=Math.round(amt/pr*10)/10;
+ if(q>Number(x.s)){toast('สินค้าเหลือเพียง '+x.s+' '+x.u);return}
  if(q<=0)q=.1;
  S.cart[id]={q:q};
  if(S.linePick[id]===undefined)S.linePick[id]=1;
@@ -1449,6 +1450,7 @@ function wSet(id,rv){
  var it=itm(id);if(!it)return;
  var n=parseFloat(String(rv).replace(/,/g,''));
  n=isNaN(n)?0:Math.max(0,Math.round(n*10)/10);
+ if(n>Number(it.s)){toast('สินค้าเหลือเพียง '+it.s+' '+it.u);vlist();return}
  if(n<=0){
   delete S.cart[id];
   delete S.linePick[id];
@@ -1572,6 +1574,7 @@ function delCart(id){
  save();cartList();vlist();vslideRender();badge();toast('ลบ '+it.n+' แล้ว')}
 function qc(id,d){
  var it=itm(id);if(!it)return;
+ if(d>0&&(it.ok!==1||it.archived||Number(it.s)<=0)){toast('สินค้าหมดสต๊อก');return}
  var cur=S.cart[id]?S.cart[id].q:0;
  var nq=Math.max(0,Math.round((cur+d*stepOf(it))*10)/10);
  if(nq<=0){
@@ -1588,10 +1591,10 @@ function clearCart(){if(!Object.keys(S.cart).length){toast('ตะกร้า�
   vlist();cartList();badge();save();toast('🧹 ล้างแล้ว')})}
 function budgetMode(){askVal('💵 สั่งตามงบ','ระบุงบประมาณ (บาท)','500',function(inp){
  var b=parseFloat(inp);if(!b||b<=0)return;
- var pool=S.V.filter(function(x){return x.ok===1&&x.core}).sort(function(a,c){return pz(a)-pz(c)});
+ var pool=S.V.filter(function(x){return x.ok===1&&x.core&&Number(x.s)>0}).sort(function(a,c){return pz(a)-pz(c)});
  S.cart={};S.linePick={};S.buyStore={};S.sentLine={};var left=b;
  pool.forEach(function(x){var st=(x.u==='กก.')?1:2,c=pz(x)*st;
-  if(left>=c&&Object.keys(S.cart).length<10){
+  if(left>=c&&x.s>=st&&Object.keys(S.cart).length<10){
    S.cart[x.id]={q:st};
    S.linePick[x.id]=1;
    left-=c;
@@ -1605,6 +1608,8 @@ async function toLine(){
  if(!buyer){toast('กรุณาระบุชื่อผู้สั่งซื้อ');document.getElementById('orderBuyerName').focus();return}
  var ids=Object.keys(S.cart).filter(function(id){return lineIsPicked(id)});
  if(!ids.length){toast('กรุณาติ๊กรายการที่จะส่งก่อน');return}
+ await refreshCloud();
+ for(var id of ids){var item=itm(id);if(!item||Number(item.s)<Number(S.cart[id]?.q||0)||Number(item.ok)!==1){toast('สินค้าในตะกร้าไม่พอหรือหมดสต๊อก กรุณาตรวจสอบอีกครั้ง');return}}
  var groups={},grandTotal=0,items=[];
  ids.forEach(function(id){var it=itm(id),order=S.cart[id];if(!it||!order)return;
   var store=defaultBuyStore(it),cost=pz(it)*order.q,pp=prepOf(id);
@@ -1618,14 +1623,17 @@ async function toLine(){
  var btn=document.querySelector('button[onclick="toLine()"]');if(btn)btn.disabled=true;
  try{
   var orderId=crypto.randomUUID();
-  var result=await cloud.from('purchase_orders').insert({id:orderId,user_id:cloudUser.id,buyer_name:buyer,items:items,total:grandTotal,status:'prepared'});
+  var result=await cloud.rpc('place_stock_order',{p_buyer:buyer,p_items:items.map(function(x){return {id:x.id,quantity:x.quantity}}),p_request_id:orderId});
   if(result.error)throw result.error;
   var message='เลขที่คำสั่งซื้อ '+orderId.slice(0,8)+'\nรายการสั่งซื้อหลายร้าน\nวันที่ '+today()+'\nผู้สั่ง: '+buyer+'\n';
   Object.keys(groups).forEach(function(store){var group=groups[store];message+='\nร้าน: '+store+'\n';group.rows.forEach(function(row,index){message+=(index+1)+'. '+row.text+'\n'});message+='รวมร้านนี้ ฿'+group.total.toFixed(0)+'\n'});
   message+='\nรวมทั้งหมด ฿'+grandTotal.toFixed(0);
   // Mark as prepared locally; do not claim LINE delivery because a share URL cannot confirm it.
   ids.forEach(function(id){S.sentLine[id]={prepared:1,date:new Date().toLocaleString('th-TH'),orderId:orderId};S.linePick[id]=0});
-  save();cartList();await refreshOrderHistory();sendLine(message);
+  // The database has already reserved the stock atomically. Do not write stale local quantities back.
+  ids.forEach(function(id){delete S.cart[id];delete S.linePick[id];delete S.buyStore[id]});
+  localStorage.setItem(LS,JSON.stringify({...S,auth:0}));
+  await refreshCloud();cartList();await refreshOrderHistory();sendLine(message);
   toast('บันทึกคำสั่งซื้อแล้ว กรุณาเลือกผู้รับใน LINE และกดส่ง');
  }catch(e){console.error(e);alert('บันทึกคำสั่งซื้อไม่สำเร็จ: '+e.message+'\nยังไม่ได้เปิด LINE กรุณาลองใหม่')}
  finally{if(btn)btn.disabled=false}
@@ -1853,10 +1861,21 @@ function archiveStockItem(id){
  S.restockAdd=S.restockAdd.filter(function(r){return r.id!==id});
  save();adm();if(onPage(3))vlist();badge();toast('เก็บสินค้าเข้ารายการเลิกขายแล้ว')
 }
-function setF(id,k,rv){var it=itm(id);if(!it)return;
+async function setF(id,k,rv){var it=itm(id);if(!it)return;
  var n=parseFloat(String(rv).replace(/,/g,''));
- it[k]=isNaN(n)?0:Math.max(0,n);
- if(it.clr>=it.p)it.clr=0;
+ if(!Number.isFinite(n)||n<0){toast('จำนวนไม่ถูกต้อง');adm();return}
+ if(k==='s'){
+  if(!cloud||!cloudUser){toast('กรุณาเข้าสู่ระบบผู้ดูแลก่อน');adm();return}
+  var note=prompt('เหตุผลการปรับสต๊อก เช่น ขายหน้าร้าน / สินค้าเสีย','ขายหน้าร้าน/ปรับยอด');
+  if(note===null){adm();return}
+  try{
+   clearTimeout(cloudTimer);
+   var res=await cloud.rpc('adjust_stock_quantity',{p_item_id:id,p_new_quantity:n,p_note:note});
+   if(res.error)throw res.error;
+   await refreshCloud();toast('บันทึกยอดสต๊อกบนคลาวด์แล้ว');return;
+  }catch(e){toast('ปรับสต๊อกไม่สำเร็จ: '+e.message);await refreshCloud();return}
+ }
+ it[k]=n;if(it.clr>=it.p)it.clr=0;
  save();adm();if(onPage(3))vlist();badge()}
 
 /* ========== เพิ่มสินค้าใหม่ ========== */
@@ -2446,8 +2465,26 @@ async function uploadStock(){
 }
 function scheduleCloudSave(){if(!cloudReady||!cloudUser||cloudLoading)return;
  clearTimeout(cloudTimer);cloudTimer=setTimeout(uploadStock,900)}
+let publicCatalogTimer=null;
+async function refreshPublicCatalog(){
+ if(!cloud||cloudUser)return;
+ const {data,error}=await cloud.from('store_catalog').select('id,kind,data');
+ if(error){cloudStatus('⚠️ โหลดสินค้าสาธารณะไม่สำเร็จ: '+error.message);return}
+ if(!data||!data.length)return;
+ S.V=data.filter(r=>r.kind==='vegetable').map(r=>r.data);
+ S.G=data.filter(r=>r.kind==='grocery').map(r=>r.data);
+ localStorage.setItem(LS,JSON.stringify({...S,auth:0}));
+ try{adm();vlist();cartList();badge()}catch(e){console.warn(e)}
+ cloudStatus('☁️ สต๊อกล่าสุดสำหรับลูกค้า '+data.length+' รายการ');
+}
+function startPublicCatalogRefresh(){
+ if(publicCatalogTimer)clearInterval(publicCatalogTimer);
+ refreshPublicCatalog();
+ publicCatalogTimer=setInterval(refreshPublicCatalog,30000);
+}
 async function refreshCloud(){
- if(!cloud||!cloudUser)return;
+ if(!cloud)return;
+ if(!cloudUser){await refreshPublicCatalog();return}
  clearTimeout(cloudTimer);cloudReady=false;cloudLoading=true;cloudStatus('☁️ กำลังโหลดข้อมูล...');
  try{
   const {data,error}=await cloud.from('stock_items').select('id,kind,data');
@@ -2489,8 +2526,9 @@ if(cloud)cloud.auth.onAuthStateChange((_event,session)=>{
  if(next?.id===cloudUser?.id)return;
  cloudUser=next;cloudReady=false;
  cloudStatus(cloudUser?'☁️ เข้าสู่ระบบแล้ว: '+cloudUser.email:'☁️ ยังไม่เชื่อมต่อ');
- if(cloudUser){setTimeout(refreshCloud,0);setTimeout(loadBuyerProfile,0);setTimeout(refreshOrderHistory,0)}else{buyerStatus('ยังไม่เข้าสู่ระบบคลาวด์');const h=document.getElementById('orderHistory');if(h)h.textContent='กรุณาเข้าสู่ระบบคลาวด์'}
+ if(cloudUser){if(publicCatalogTimer)clearInterval(publicCatalogTimer);setTimeout(refreshCloud,0);setTimeout(loadBuyerProfile,0);setTimeout(refreshOrderHistory,0)}else{startPublicCatalogRefresh();buyerStatus('ยังไม่เข้าสู่ระบบคลาวด์');const h=document.getElementById('orderHistory');if(h)h.textContent='กรุณาเข้าสู่ระบบคลาวด์'}
 });
+if(cloud)cloud.auth.getSession().then(({data})=>{if(!data.session)startPublicCatalogRefresh()}).catch(console.warn);
 </script>
 </body>
 </html>
