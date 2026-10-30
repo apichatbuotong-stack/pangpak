@@ -1778,6 +1778,22 @@ function toggleClr(id){var it=itm(id);if(!it)return;
    var n=parseFloat(inp);if(!n||n<=0||n>=it.p){toast('ราคาต้องต่ำกว่าราคาขายปกติ');return}
    it.clr=n;save();adm();if(onPage(3))vlist();badge();toast('🏷️ ตั้งราคาลด ฿'+n+' แล้ว')})}}
 function setSrc(id,s){var it=itm(id);if(!it)return;it.src=s;save();adm();if(onPage(3))vlist()}
+async function stkSet(id,raw){return setF(id,'s',raw)}
+async function stkAdj(id,delta){
+ var it=itm(id);if(!it)return;
+ var step=1;
+ var next=Math.round((Math.max(0,Number(it.s||0)+delta*step)+Number.EPSILON)*10)/10;
+ await setF(id,'s',next);
+}
+async function stockCounterSale(id){
+ var it=itm(id);if(!it)return;
+ var raw=prompt('ขายหน้าร้านกี่ '+it.u+'? (คงเหลือ '+it.s+' '+it.u+')','1');
+ if(raw===null)return;
+ var qty=Number(raw);
+ if(!Number.isFinite(qty)||qty<=0){toast('กรุณาระบุจำนวนที่ขายมากกว่า 0');return}
+ if(qty>Number(it.s)){toast('สต๊อกไม่พอ คงเหลือ '+it.s+' '+it.u);return}
+ await setF(id,'s',Math.round((Number(it.s)-qty)*10)/10,'ขายหน้าร้าน '+qty+' '+it.u);
+}
 function setK(id,ok){var it=itm(id);if(!it)return;
  it.ok=ok?1:0;if(!ok)delete S.cart[id];save();adm();if(onPage(3))vlist();badge();
  toast(ok?('✅ เปิดขาย '+it.n):('⛔ ปิดขาย '+it.n))}
@@ -1824,6 +1840,7 @@ function adm(){
    +'<input class="qnum" type="number" min="0" step="0.1" value="'+fmt(x.s)+'" onchange="stkSet(\''+x.id+'\',this.value)">'
    +'<button onclick="stkAdj(\''+x.id+'\',1)">+</button></div>'
    +'<span class="mini">'+x.u+'</span></div>'
+   +'<div style="margin:6px 0 9px"><button class="btn gh sm" onclick="stockCounterSale(\''+x.id+'\')">🏪 ขายหน้าร้าน / ตัดยอด</button><span class="mini" style="margin-left:6px">ปุ่ม +/- จะถามเหตุผลก่อนบันทึก</span></div>'
    +(warn0?'<div class="warn0">⚠️ สต็อกเป็น 0 แต่ยังเปิดขายอยู่ — ลองกดปิดขายไหม?</div>':'')
    +(sp?(
     '<div class="corebox'+(x.core?' on':'')+'">'
@@ -1862,15 +1879,18 @@ function archiveStockItem(id){
  S.restockAdd=S.restockAdd.filter(function(r){return r.id!==id});
  save();adm();if(onPage(3))vlist();badge();toast('เก็บสินค้าเข้ารายการเลิกขายแล้ว')
 }
-async function setF(id,k,rv){var it=itm(id);if(!it)return;
+async function setF(id,k,rv,reason){var it=itm(id);if(!it)return;
  var n=parseFloat(String(rv).replace(/,/g,''));
  if(!Number.isFinite(n)||n<0){toast('จำนวนไม่ถูกต้อง');adm();return}
  if(k==='s'){
-  if(!cloud||!cloudUser){toast('กรุณาเข้าสู่ระบบผู้ดูแลก่อน');adm();return}
-  var note=prompt('เหตุผลการปรับสต๊อก เช่น ขายหน้าร้าน / สินค้าเสีย','ขายหน้าร้าน/ปรับยอด');
+  if(!cloud||!cloudUser||!cloudReady){toast('กรุณาเข้าสู่ระบบผู้ดูแลและรอซิงค์ข้อมูลก่อน');adm();return}
+  if(n===Number(it.s)){adm();return}
+  var note=reason||prompt('เหตุผลการปรับสต๊อก เช่น ขายหน้าร้าน / สินค้าเสีย','ขายหน้าร้าน/ปรับยอด');
   if(note===null){adm();return}
+  if(!String(note).trim()){toast('กรุณาระบุเหตุผลการปรับสต๊อก');adm();return}
   try{
    clearTimeout(cloudTimer);
+   await refreshCloud();
    var res=await cloud.rpc('adjust_stock_quantity',{p_item_id:id,p_new_quantity:n,p_note:note});
    if(res.error)throw res.error;
    await refreshCloud();toast('บันทึกยอดสต๊อกบนคลาวด์แล้ว');return;
