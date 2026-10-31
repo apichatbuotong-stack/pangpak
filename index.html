@@ -411,7 +411,7 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
  <div class="mini">ไม่ต้องสมัครบัญชีหรือเชื่อมต่อฐานข้อมูลด้วยตนเอง ระบบจะตรวจสต๊อกล่าสุดและบันทึกคำสั่งซื้อให้อัตโนมัติ</div>
  </div>
  <div id="cartBox"></div>
- <div class="card"><div class="nm">📋 ประวัติคำสั่งซื้อ (สำหรับผู้ดูแล)</div><div class="mini">ลูกค้าสามารถสั่งซื้อได้โดยไม่ต้องล็อกอิน ประวัติส่วนนี้แสดงข้อมูลสำหรับบัญชีผู้ดูแลเท่านั้น</div><div id="orderHistory"><div class="mini">ประวัติคำสั่งซื้อจะแสดงเมื่อผู้ดูแลเข้าสู่ระบบ</div></div><button class="btn gh sm" id="refreshOrderHistoryBtn" onclick="refreshOrderHistory()">🔄 โหลดประวัติสั่งซื้อ</button></div>
+ <div class="card"><div class="nm">📋 ประวัติคำสั่งซื้อ (สำหรับผู้ดูแล)</div><div class="mini">ลูกค้าสามารถสั่งซื้อได้โดยไม่ต้องล็อกอิน ประวัติส่วนนี้แสดงข้อมูลสำหรับบัญชีผู้ดูแลเท่านั้น</div><div id="orderHistory"><div class="mini">ประวัติคำสั่งซื้อจะแสดงเมื่อผู้ดูแลเข้าสู่ระบบ</div></div><button class="btn gh sm" id="refreshOrderHistoryBtn" style="display:none" onclick="refreshOrderHistory()">🔄 โหลดประวัติสั่งซื้อ</button></div>
   <div class="card">
     <div class="nm">เลือกรายการและร้านที่จะส่งซื้อ</div>
     <div class="mini">ติ๊กได้หลายรายการ และกำหนดร้านของแต่ละรายการ ระบบจะจัดกลุ่มรายการตามร้านให้อัตโนมัติ</div>
@@ -2394,7 +2394,7 @@ async function saveBuyerProfile(){
 }
 async function refreshOrderHistory(){
  const el=document.getElementById('orderHistory');if(!el)return;
- if(!cloud||!cloudUser){el.textContent='กรุณาเข้าสู่ระบบคลาวด์';return}
+ if(!cloud||!cloudUser){el.textContent='ประวัติคำสั่งซื้อจะแสดงเมื่อผู้ดูแลเข้าสู่ระบบ';return}
  const {data,error}=await cloud.from('purchase_orders').select('id,buyer_name,total,status,created_at,items').order('created_at',{ascending:false}).limit(100);
  if(error){el.textContent='โหลดประวัติไม่สำเร็จ: '+error.message;return}
  if(!data.length){el.textContent='ยังไม่มีประวัติคำสั่งซื้อ';return}
