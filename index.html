@@ -38,7 +38,7 @@ h2:first-child{margin-top:0}
 .chip.sm2{padding:5px 11px;font-size:.78rem}
 .flab{font-size:.75rem;color:var(--mut);font-weight:700;margin:2px 0 4px;width:100%}
 .morebtn{background:#eef4ee;border:none;border-radius:20px;padding:6px 12px;font:600 .8rem 'Noto Sans Thai';color:var(--g);cursor:pointer}
-.nm{font-weight:800;font-size:1rem;line-height:1.4;word-break:break-word}
+.nm{font-weight:800;font-size:1rem;line-height:1.4;word-break:break-word}.veg-title{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.veg-title .tag{margin:0;white-space:nowrap}.veg-name{min-width:0}
 .mu{font-size:.8rem;color:var(--mut);margin-top:3px;line-height:1.55;word-break:break-word}
 .tag{display:inline-block;font-size:.7rem;padding:2px 7px;border-radius:6px;margin:3px 3px 0 0;font-weight:700}
 .t-g{background:#e8f5e9;color:var(--g)}.t-o{background:#fff3e0;color:var(--or)}.t-r{background:#ffebee;color:var(--rd)}
@@ -406,13 +406,12 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
     <div class="slider" id="vslider"></div><div class="dots" id="vdots"></div>
   </div>
   <div class="card" id="buyerOrderPanel"><div class="nm">👤 ข้อมูลผู้สั่งซื้อ</div>
- <div class="mini" id="buyerAuthStatus">กรุณาเข้าสู่ระบบคลาวด์เพื่อบันทึกประวัติคำสั่งซื้อ</div>
+ <div class="mini" id="buyerAuthStatus">ลูกค้าสั่งซื้อได้โดยไม่ต้องเข้าสู่ระบบ เพียงระบุชื่อผู้สั่งซื้อ</div>
  <div class="f"><label>ชื่อผู้สั่ง (แสดงในข้อความ LINE)</label><input id="orderBuyerName" placeholder="ชื่อผู้สั่งซื้อ" autocomplete="name"></div>
- <div class="mini">LINE Login ต้องตั้งค่า LINE Developers เพิ่มเติม ตอนนี้ระบบยังไม่สามารถยืนยันตัวตน LINE หรือทราบว่าใครเป็นผู้ส่งข้อความจริงได้</div>
- <button class="btn gh sm" onclick="saveBuyerProfile()">💾 บันทึกชื่อผู้สั่ง</button>
+ <div class="mini">ไม่ต้องสมัครบัญชีหรือเชื่อมต่อฐานข้อมูลด้วยตนเอง ระบบจะตรวจสต๊อกล่าสุดและบันทึกคำสั่งซื้อให้อัตโนมัติ</div>
  </div>
  <div id="cartBox"></div>
- <div class="card"><div class="nm">📋 ประวัติรายการสั่งซื้อบนคลาวด์</div><div class="mini">สถานะ “เตรียมส่ง LINE” หมายถึงสร้างรายการแล้ว ไม่ได้ยืนยันว่า LINE ส่งสำเร็จ</div><div id="orderHistory"><div class="mini">เข้าสู่ระบบเพื่อดูประวัติ</div></div><button class="btn gh sm" onclick="refreshOrderHistory()">🔄 โหลดประวัติสั่งซื้อ</button></div>
+ <div class="card"><div class="nm">📋 ประวัติคำสั่งซื้อ (สำหรับผู้ดูแล)</div><div class="mini">ลูกค้าสามารถสั่งซื้อได้โดยไม่ต้องล็อกอิน ประวัติส่วนนี้แสดงข้อมูลสำหรับบัญชีผู้ดูแลเท่านั้น</div><div id="orderHistory"><div class="mini">ประวัติคำสั่งซื้อจะแสดงเมื่อผู้ดูแลเข้าสู่ระบบ</div></div><button class="btn gh sm" id="refreshOrderHistoryBtn" onclick="refreshOrderHistory()">🔄 โหลดประวัติสั่งซื้อ</button></div>
   <div class="card">
     <div class="nm">เลือกรายการและร้านที่จะส่งซื้อ</div>
     <div class="mini">ติ๊กได้หลายรายการ และกำหนดร้านของแต่ละรายการ ระบบจะจัดกลุ่มรายการตามร้านให้อัตโนมัติ</div>
@@ -1500,8 +1499,8 @@ function vlist(){
   return '<div class="card '+(x.clr>0?'hl':(x.pd?'drop':'ok'))+'">'
    +'<div class="row nowrap" style="align-items:flex-start">'
    +thumbHTML
-   +'<div class="veg-info"><div class="nm">'+x.n+'</div>'
-   +'<div style="margin:3px 0"><span class="tag '+(x.t===1?'t-r':(x.t===-1?'t-g':'t-b'))+'">'+tr[0]+'</span>'
+   +'<div class="veg-info"><div class="nm veg-title"><span class="veg-name">'+x.n+'</span><span class="tag '+(x.t===1?'t-r':(x.t===-1?'t-g':'t-b'))+'">'+tr[0]+'</span></div>'
+   +'<div style="margin:3px 0">'
    +(x.clr>0?'<span class="tag t-o">🏷️ ลดระบาย</span>':'')
    +(x.src==='home'?'<span class="tag t-g">🌱 ผักบ้าน</span>':'')+'</div>'
    +'<div>'+prTx+'</div>'
@@ -1604,7 +1603,7 @@ function budgetMode(){askVal('💵 สั่งตามงบ','ระบุง
  say('💵 จัดชุดผักในงบ ฿'+b,'ใช้ไป ฿'+(b-left).toFixed(0)+'\nเหลือ ฿'+left.toFixed(0)
   +'\nได้ '+Object.keys(S.cart).length+' รายการ')})}
 async function toLine(){
- if(!cloud||!cloudUser){toast('กรุณาเข้าสู่ระบบคลาวด์ก่อนสั่งซื้อ');return}
+ if(!cloud){toast('ระบบเชื่อมต่อร้านค้ายังไม่พร้อม กรุณาลองใหม่');return}
  var buyer=(document.getElementById('orderBuyerName').value||'').trim();
  if(!buyer){toast('กรุณาระบุชื่อผู้สั่งซื้อ');document.getElementById('orderBuyerName').focus();return}
  var ids=Object.keys(S.cart).filter(function(id){return lineIsPicked(id)});
@@ -2546,8 +2545,9 @@ if(cloud)cloud.auth.onAuthStateChange((_event,session)=>{
  const next=session?.user||null;
  if(next?.id===cloudUser?.id)return;
  cloudUser=next;cloudReady=false;
+ const historyButton=document.getElementById('refreshOrderHistoryBtn');if(historyButton)historyButton.style.display=cloudUser?'':'none';
  cloudStatus(cloudUser?'☁️ เข้าสู่ระบบแล้ว: '+cloudUser.email:'☁️ ยังไม่เชื่อมต่อ');
- if(cloudUser){if(publicCatalogTimer)clearInterval(publicCatalogTimer);setTimeout(refreshCloud,0);setTimeout(loadBuyerProfile,0);setTimeout(refreshOrderHistory,0)}else{startPublicCatalogRefresh();buyerStatus('ยังไม่เข้าสู่ระบบคลาวด์');const h=document.getElementById('orderHistory');if(h)h.textContent='กรุณาเข้าสู่ระบบคลาวด์'}
+ if(cloudUser){if(publicCatalogTimer)clearInterval(publicCatalogTimer);setTimeout(refreshCloud,0);setTimeout(loadBuyerProfile,0);setTimeout(refreshOrderHistory,0)}else{startPublicCatalogRefresh();buyerStatus('ลูกค้าสั่งซื้อได้โดยไม่ต้องเข้าสู่ระบบ');const h=document.getElementById('orderHistory');if(h)h.textContent='ประวัติคำสั่งซื้อจะแสดงเมื่อผู้ดูแลเข้าสู่ระบบ';const hb=document.getElementById('refreshOrderHistoryBtn');if(hb)hb.style.display='none'}
 });
 if(cloud)cloud.auth.getSession().then(({data})=>{if(!data.session)startPublicCatalogRefresh()}).catch(console.warn);
 </script>
