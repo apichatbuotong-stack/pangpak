@@ -269,7 +269,15 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
       <button class="fsbtn" id="fs2" onclick="setFS(16)">ก<br>ใหญ่</button>
       <button class="fsbtn" id="fs3" onclick="setFS(18)">ก<br>ใหญ่พิเศษ</button>
     </div>
-    <div class="dhd">☁️ Supabase Stock</div><div id="cloudStatus" class="mini">ยังไม่เชื่อมต่อ</div><button class="btn sm" onclick="cloudLogin()">เข้าสู่ระบบคลาวด์</button><button class="btn gh sm" onclick="cloudSignup()">สมัครบัญชีคลาวด์</button><button class="btn gh sm" onclick="refreshCloud()">โหลดสต๊อกล่าสุด</button><button class="btn gh sm" onclick="cloudLogout()">ออกจากคลาวด์</button><div class="dhd">จัดการร้าน</div>
+    <div class="dhd">☁️ Supabase Stock</div><div id="cloudStatus" class="mini">ยังไม่เชื่อมต่อ</div><button class="btn sm" onclick="cloudLogin()">เข้าสู่ระบบคลาวด์</button><button class="btn gh sm" onclick="cloudSignup()">สมัครบัญชีคลาวด์</button><button class="btn gh sm" onclick="refreshCloud()">โหลดสต๊อกล่าสุด</button><button class="btn gh sm" onclick="cloudLogout()">ออกจากคลาวด์</button><div class="dhd">🏠 หน้าบ้าน</div>
+    <a onclick="dClose();go(1,null)">🍲 กับข้าว</a>
+    <a onclick="dClose();go(2,null)">📝 แผนซื้อ</a>
+    <a onclick="dClose();go(3,null)">🛍️ สั่งผัก</a>
+    <a onclick="dClose();go(4,null)">🎨 ทำป้าน</a>
+    <a onclick="dClose();go(5,null)">🛒 ร้านค้า</a>
+    <div class="dhd">⚙️ หลังบ้าน · สำหรับผู้ดูแล</div>
+    <a class="hi" onclick="openDishAdmin()">🍲 จัดการฐานข้อมูลกับข้าว</a>
+    <div class="dhd">จัดการร้าน</div>
     <a class="hi" onclick="adminGo(6)">⚙️ จัดการสต๊อก &amp; ราคา</a>
     <a onclick="adminGo(9)">🔄 รายการซื้อเข้าร้าน</a>
     <a onclick="adminGo(12)">📈 สรุปราคาซื้อขายและกำไร</a>
@@ -665,6 +673,46 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
   <div id="buyAnalysisList"></div>
 </section>
 
+<!-- 14 หลังบ้าน: จัดการฐานข้อมูลกับข้าว -->
+<section id="p14" class="page">
+  <div class="row nowrap" style="align-items:center;margin-bottom:10px">
+    <div class="grow"><h2>🍲 ฐานข้อมูลกับข้าว</h2><div class="mini">เพิ่ม แก้ไข ซ่อน และเผยแพร่เมนูให้หน้าบ้าน</div></div>
+    <button class="btn gh sm" onclick="go(1,null)">กลับหน้าบ้าน</button>
+  </div>
+  <div class="card" style="border:2px solid #b7dcc0">
+    <div class="row nowrap"><b>✍️ ข้อมูลเมนู</b><span class="spacer"></span><button class="btn gh sm" type="button" onclick="dishReset()">ล้างฟอร์ม</button></div>
+    <form id="dishForm" onsubmit="dishSave(event)">
+      <input type="hidden" id="dishId">
+      <div class="f"><label for="dishName">ชื่อกับข้าว *</label><input id="dishName" required maxlength="120" placeholder="เช่น แกงส้มผักรวม"></div>
+      <div class="f2">
+        <div class="f"><label for="dishCat">ประเภทอาหาร *</label><select id="dishCat"><option>ต้ม</option><option>ผัด</option><option>แกง</option><option>ทอด</option><option>ยำ</option><option>อื่นๆ</option></select></div>
+        <div class="f"><label for="dishIcon">สัญลักษณ์/อีโมจิ</label><input id="dishIcon" maxlength="8" value="🍲"></div>
+      </div>
+      <div class="f2">
+        <div class="f"><label for="dishYield">ทำได้กี่ถุง/ชุด *</label><input id="dishYield" type="number" min="1" step="1" value="5" required></div>
+        <div class="f"><label for="dishPrice">ราคาขายต่อถุง (บาท) *</label><input id="dishPrice" type="number" min="0" step="0.5" value="40" required></div>
+      </div>
+      <div class="f2">
+        <div class="f"><label for="dishTime">เวลาเตรียม</label><input id="dishTime" value="20 นาที" maxlength="40"></div>
+        <div class="f"><label for="dishLevel">ความยาก</label><select id="dishLevel"><option>ง่ายมาก</option><option>ง่าย</option><option>ปานกลาง</option><option>ยาก</option></select></div>
+      </div>
+      <div class="f"><label for="dishBenefit">จุดเด่น/ประโยชน์ของเมนู</label><input id="dishBenefit" maxlength="180" placeholder="เช่น มีใยอาหารสูง"></div>
+      <div class="f"><label for="dishTags">แท็กสุขภาพ (คั่นด้วยเครื่องหมายจุลภาค)</label><input id="dishTags" placeholder="เช่น แคลอรีต่ำ, ผู้สูงอายุ, เมนูเด็ก"></div>
+      <div class="sec">🧺 วัตถุดิบและปริมาณ</div>
+      <div class="mini">เลือกวัตถุดิบจากสต๊อกที่มีอยู่ ระบบจะนำไปคำนวณต้นทุนและแผนซื้อ</div>
+      <div id="dishIngRows"></div>
+      <button class="btn gh" type="button" onclick="dishAddIngredientRow()">＋ เพิ่มวัตถุดิบ</button>
+      <div class="f" style="margin-top:12px"><label for="dishSteps">วิธีทำ (แยกแต่ละขั้นตอนด้วยการขึ้นบรรทัดใหม่)</label><textarea id="dishSteps" rows="5" placeholder="1. เตรียมวัตถุดิบ...&#10;2. ตั้งหม้อ..."></textarea></div>
+      <div class="f"><label for="dishTip">เคล็ดลับ</label><textarea id="dishTip" rows="2" placeholder="เคล็ดลับให้อร่อย"></textarea></div>
+      <label style="display:flex;align-items:center;gap:8px;margin:8px 0"><input id="dishPublished" type="checkbox" checked style="width:auto;margin:0"> เผยแพร่ให้ลูกค้าเห็นในหน้าบ้าน</label>
+      <button class="btn" type="submit" style="width:100%">💾 บันทึกข้อมูลกับข้าว</button>
+      <div id="dishSaveStatus" class="mini" style="margin-top:7px">🔒 ต้องเข้าสู่ระบบ Supabase ด้วยบัญชีผู้ดูแลก่อนบันทึก</div>
+    </form>
+  </div>
+  <div class="row nowrap" style="margin:16px 0 8px"><h3>📚 รายการเมนูในฐานข้อมูล</h3><span class="spacer"></span><button class="btn gh sm" onclick="dishAdminRender()">🔄 โหลดใหม่</button></div>
+  <div id="dishAdminList"></div>
+</section>
+
 <div class="toast" id="toast"></div>
 
 <nav>
@@ -990,6 +1038,7 @@ function go(n,el){
  if(n===11)affRep();
  if(n===12)priceProfitReport();
  if(n===13)buyAnalysisReport();
+ if(n===14)dishAdminRender();
  renderAffSliders();
 }
 function dOpen(){document.getElementById('drw').classList.add('on');
@@ -2424,6 +2473,135 @@ async function refreshCloud(){
  }catch(e){cloudStatus('⚠️ โหลดข้อมูลไม่สำเร็จ: '+e.message);toast('⚠️ โหลดสต๊อกไม่สำเร็จ');return}
  finally{cloudLoading=false;cloudReady=true}
 }
+
+// ===== ฐานข้อมูลกับข้าวบน Supabase =====
+var dishDbInitialized=false, dishAdminCache=[];
+function dishEsc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})}
+function dishApplyRows(rows){
+ dishDbInitialized=true;
+ M=(rows||[]).filter(function(row){return row.id!=='__legacy_seeded__'&&row.is_published}).map(function(row){return row.data});
+ var tags=[];M.forEach(function(m){(m.h||[]).forEach(function(t){if(tags.indexOf(t)===-1)tags.push(t)})});
+ HTAGS=tags.sort();
+ if(typeof mf==='undefined')mf='all';
+ try{mcat();mlist();renderSlides();}catch(e){console.warn('Dish display refresh:',e)}
+}
+async function refreshDishes(){
+ if(!cloud)return;
+ try{
+  const {data,error}=await cloud.from('dishes').select('id,data,is_published').eq('is_published',true).order('updated_at',{ascending:false});
+  if(error)throw error;
+  if(data.length||dishDbInitialized)dishApplyRows(data);
+ }catch(e){console.warn('โหลดฐานข้อมูลกับข้าวไม่สำเร็จ:',e.message)}
+}
+async function openDishAdmin(){
+ if(!cloudUser){await cloudLogin()}
+ if(!cloudUser){alert('กรุณาเข้าสู่ระบบ Supabase ด้วยบัญชีผู้ดูแลก่อนจัดการฐานข้อมูลกับข้าว');return}
+ dClose();go(14,null);
+}
+function dishIngredientOptions(selected){
+ var items=(S.V||[]).concat(S.G||[]);
+ return '<option value="">เลือกวัตถุดิบจากสต๊อก</option>'+items.map(function(it){
+  return '<option value="'+dishEsc(it.id)+'" '+(it.id===selected?'selected':'')+'>'+dishEsc(it.ic||'')+' '+dishEsc(it.n)+' ('+dishEsc(it.u||'หน่วย')+')</option>'
+ }).join('');
+}
+function dishAddIngredientRow(id,qty){
+ var box=document.getElementById('dishIngRows');if(!box)return;
+ var row=document.createElement('div');row.className='f2 dish-ing-row';
+ row.innerHTML='<div style="flex:2 1 170px"><select class="dish-ing-id">'+dishIngredientOptions(id||'')+'</select></div>'
+  +'<div style="flex:1 1 75px"><input class="dish-ing-qty" type="number" min="0.001" step="0.001" value="'+(qty==null?'1':dishEsc(qty))+'" placeholder="ปริมาณ"></div>'
+  +'<div style="flex:0 0 42px"><button class="btn gh sm" type="button" onclick="this.closest(\'.dish-ing-row\').remove()">✕</button></div>';
+ box.appendChild(row);
+}
+function dishReset(){
+ var form=document.getElementById('dishForm');if(form)form.reset();
+ document.getElementById('dishId').value='';
+ document.getElementById('dishIcon').value='🍲';
+ document.getElementById('dishYield').value='5';
+ document.getElementById('dishPrice').value='40';
+ document.getElementById('dishIngRows').innerHTML='';
+ dishAddIngredientRow();
+ document.getElementById('dishSaveStatus').textContent='เพิ่มเมนูใหม่ · ต้องเข้าสู่ระบบ Supabase เพื่อบันทึก';
+}
+function dishEdit(id){
+ var m=dishAdminCache.find(function(x){return x.id===id});if(!m)return;
+ document.getElementById('dishId').value=m.id;
+ document.getElementById('dishName').value=m.n||'';
+ document.getElementById('dishCat').value=m.c||'ต้ม';
+ document.getElementById('dishIcon').value=m.ic||'🍲';
+ document.getElementById('dishYield').value=m.bg||5;
+ document.getElementById('dishPrice').value=m.sp||0;
+ document.getElementById('dishTime').value=m.tm||'20 นาที';
+ document.getElementById('dishLevel').value=m.lv||'ง่าย';
+ document.getElementById('dishBenefit').value=m.w||'';
+ document.getElementById('dishTags').value=(m.h||[]).join(', ');
+ document.getElementById('dishSteps').value=(m.r||[]).join('\n');
+ document.getElementById('dishTip').value=m.tip||'';
+ document.getElementById('dishPublished').checked=!!m.is_published;
+ var box=document.getElementById('dishIngRows');box.innerHTML='';
+ (m.b||[]).concat(m.g||[]).forEach(function(p){dishAddIngredientRow(p[0],p[1])});
+ if(!box.children.length)dishAddIngredientRow();
+ document.getElementById('dishSaveStatus').textContent='กำลังแก้ไข: '+m.n;
+ document.getElementById('dishForm').scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function dishSave(ev){
+ if(ev)ev.preventDefault();
+ if(!cloud||!cloudUser)return alert('กรุณาเข้าสู่ระบบ Supabase ด้วยบัญชีผู้ดูแล');
+ var name=val('dishName').trim(),yieldCount=parseFloat(val('dishYield')),price=parseFloat(val('dishPrice'));
+ if(!name||!yieldCount||yieldCount<1||!isFinite(price)||price<0)return alert('กรุณาตรวจชื่อเมนู จำนวนที่ทำได้ และราคาขาย');
+ var b=[],g=[];
+ document.querySelectorAll('#dishIngRows .dish-ing-row').forEach(function(row){
+  var id=row.querySelector('.dish-ing-id').value,q=parseFloat(row.querySelector('.dish-ing-qty').value);
+  if(!id||!q||q<=0)return;
+  (S.V.some(function(x){return x.id===id})?b:g).push([id,q]);
+ });
+ if(!b.length&&!g.length)return alert('กรุณาเพิ่มวัตถุดิบอย่างน้อย 1 รายการ');
+ var id=val('dishId')||('dish_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7));
+ var data={id:id,n:name,c:val('dishCat'),ic:val('dishIcon').trim()||'🍲',b:b,g:g,bg:yieldCount,sp:price,
+  tm:val('dishTime').trim()||'20 นาที',lv:val('dishLevel'),w:val('dishBenefit').trim(),
+  h:val('dishTags').split(',').map(function(x){return x.trim()}).filter(Boolean),
+  r:val('dishSteps').split('\n').map(function(x){return x.trim()}).filter(Boolean),tip:val('dishTip').trim()};
+ var status=document.getElementById('dishSaveStatus');status.textContent='กำลังบันทึก...';
+ const {error}=await cloud.from('dishes').upsert({id:id,data:data,is_published:document.getElementById('dishPublished').checked,updated_by:cloudUser.id},{onConflict:'id'});
+ if(error){status.textContent='บันทึกไม่สำเร็จ: '+error.message;return alert('บันทึกไม่สำเร็จ: '+error.message)}
+ toast('💾 บันทึกเมนูแล้ว');dishReset();await dishAdminRender();await refreshDishes();
+}
+async function dishDelete(id){
+ var m=dishAdminCache.find(function(x){return x.id===id});if(!m)return;
+ ask('ลบเมนูนี้?', 'ต้องการลบ “'+m.n+'” ออกจากฐานข้อมูลใช่หรือไม่',async function(){
+  const {error}=await cloud.from('dishes').delete().eq('id',id);
+  if(error)return alert('ลบไม่สำเร็จ: '+error.message);
+  await dishAdminRender();await refreshDishes();toast('ลบเมนูแล้ว');
+ });
+}
+async function dishAdminRender(){
+ var list=document.getElementById('dishAdminList');if(!list)return;
+ if(!cloud||!cloudUser){list.innerHTML='<div class="emp">🔒 กรุณาเข้าสู่ระบบ Supabase ก่อนจัดการเมนู</div>';return}
+ list.innerHTML='<div class="emp">กำลังโหลดฐานข้อมูลกับข้าว...</div>';
+ try{
+  var result=await cloud.from('dishes').select('id,data,is_published,updated_at').order('updated_at',{ascending:false});
+  if(result.error)throw result.error;
+  var rows=result.data||[];
+  var marker=rows.some(function(r){return r.id==='__legacy_seeded__'});
+  if(!marker){
+   var seed=M.map(function(m){return {id:m.id,data:m,is_published:true,updated_by:cloudUser.id}});
+   seed.push({id:'__legacy_seeded__',data:{seeded:true},is_published:false,updated_by:cloudUser.id});
+   const seeded=await cloud.from('dishes').upsert(seed,{onConflict:'id'});
+   if(seeded.error)throw seeded.error;
+   result=await cloud.from('dishes').select('id,data,is_published,updated_at').order('updated_at',{ascending:false});
+   if(result.error)throw result.error;
+   rows=result.data||[];
+  }
+  dishDbInitialized=true;
+  dishAdminCache=rows.filter(function(r){return r.id!=='__legacy_seeded__'}).map(function(r){return Object.assign({},r.data,{is_published:r.is_published})});
+  dishApplyRows(rows.filter(function(r){return r.id!=='__legacy_seeded__'}));
+  list.innerHTML=dishAdminCache.length?dishAdminCache.map(function(m){
+   return '<div class="card '+(m.is_published?'ok':'hl')+'"><div class="row nowrap"><div class="grow"><b>'+dishEsc(m.ic||'🍲')+' '+dishEsc(m.n)+'</b><div class="mini">'+dishEsc(m.c)+' · ทำได้ '+dishEsc(m.bg)+' ถุง · ขาย ฿'+dishEsc(m.sp)+'</div><span class="tag '+(m.is_published?'t-g':'t-y')+'">'+(m.is_published?'เผยแพร่หน้าบ้าน':'ยังไม่เผยแพร่')+'</span></div><button class="btn gh sm" onclick="dishEdit(\''+dishEsc(m.id)+'\')">แก้ไข</button><button class="btn gh sm" style="color:var(--rd)" onclick="dishDelete(\''+dishEsc(m.id)+'\')">ลบ</button></div></div>'
+  }).join(''):'<div class="emp">ยังไม่มีเมนูในฐานข้อมูล</div>';
+  document.getElementById('dishSaveStatus').textContent='เชื่อมต่อฐานข้อมูลแล้ว · '+dishAdminCache.length+' เมนู';
+  if(!document.getElementById('dishIngRows').children.length)dishAddIngredientRow();
+ }catch(e){list.innerHTML='<div class="emp">⚠️ โหลดฐานข้อมูลไม่สำเร็จ: '+dishEsc(e.message)+'</div>'}
+}
+
 async function cloudLogin(){
  if(!cloud)return alert('ไม่สามารถเชื่อมต่อ Supabase SDK ได้');
  const email=prompt('อีเมลผู้ดูแล Supabase');if(!email)return;
@@ -2446,8 +2624,9 @@ if(cloud)cloud.auth.onAuthStateChange((_event,session)=>{
  if(next?.id===cloudUser?.id)return;
  cloudUser=next;cloudReady=false;
  cloudStatus(cloudUser?'☁️ เข้าสู่ระบบแล้ว: '+cloudUser.email:'☁️ ยังไม่เชื่อมต่อ');
- if(cloudUser){setTimeout(refreshCloud,0);setTimeout(loadBuyerProfile,0);setTimeout(refreshOrderHistory,0)}else{buyerStatus('ยังไม่เข้าสู่ระบบคลาวด์');const h=document.getElementById('orderHistory');if(h)h.textContent='กรุณาเข้าสู่ระบบคลาวด์'}
+ if(cloudUser){setTimeout(refreshCloud,0);setTimeout(loadBuyerProfile,0);setTimeout(refreshOrderHistory,0);setTimeout(refreshDishes,0)}else{buyerStatus('ยังไม่เข้าสู่ระบบคลาวด์');const h=document.getElementById('orderHistory');if(h)h.textContent='กรุณาเข้าสู่ระบบคลาวด์'}
 });
+setTimeout(refreshDishes,0);
 </script>
 </body>
 </html>
