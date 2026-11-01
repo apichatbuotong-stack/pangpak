@@ -1608,7 +1608,12 @@ async function toLine(){
  if(!buyer){toast('กรุณาระบุชื่อผู้สั่งซื้อ');document.getElementById('orderBuyerName').focus();return}
  var ids=Object.keys(S.cart).filter(function(id){return lineIsPicked(id)});
  if(!ids.length){toast('กรุณาติ๊กรายการที่จะส่งก่อน');return}
- await refreshCloud();
+ // Customers must fetch a successful public stock snapshot immediately before ordering.
+ // Store managers continue to refresh their authenticated stock data.
+ if(cloudUser){await refreshCloud()}else{
+  var catalogOk=await refreshPublicCatalog();
+  if(!catalogOk){toast('โหลดสต๊อกล่าสุดไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');return}
+ }
  for(var id of ids){var item=itm(id);if(!item||Number(item.s)<Number(S.cart[id]?.q||0)||Number(item.ok)!==1){toast('สินค้าในตะกร้าไม่พอหรือหมดสต๊อก กรุณาตรวจสอบอีกครั้ง');return}}
  var groups={},grandTotal=0,items=[];
  ids.forEach(function(id){var it=itm(id),order=S.cart[id];if(!it||!order)return;
@@ -2485,17 +2490,22 @@ async function uploadStock(){
 }
 function scheduleCloudSave(){if(!cloudReady||!cloudUser||cloudLoading)return;
  clearTimeout(cloudTimer);cloudTimer=setTimeout(uploadStock,900)}
-let publicCatalogTimer=null;
+let publicCatalogTimer=null,publicCatalogReady=false;
 async function refreshPublicCatalog(){
- if(!cloud||cloudUser)return;
+ if(!cloud||cloudUser){publicCatalogReady=false;return false}
+ publicCatalogReady=false;
  const {data,error}=await cloud.from('store_catalog').select('id,kind,data');
- if(error){cloudStatus('⚠️ โหลดสินค้าสาธารณะไม่สำเร็จ: '+error.message);return}
- if(!data||!data.length)return;
- S.V=data.filter(r=>r.kind==='vegetable').map(r=>r.data);
- S.G=data.filter(r=>r.kind==='grocery').map(r=>r.data);
+ if(error){cloudStatus('⚠️ โหลดสินค้าสาธารณะไม่สำเร็จ: '+error.message);return false}
+ const rows=Array.isArray(data)?data:[];
+ // Replace the cached catalog even when the store has zero active products.
+ // This prevents an old local stock snapshot from appearing orderable.
+ S.V=rows.filter(r=>r.kind==='vegetable').map(r=>r.data);
+ S.G=rows.filter(r=>r.kind==='grocery').map(r=>r.data);
  localStorage.setItem(LS,JSON.stringify({...S,auth:0}));
  try{adm();vlist();cartList();badge()}catch(e){console.warn(e)}
- cloudStatus('☁️ สต๊อกล่าสุดสำหรับลูกค้า '+data.length+' รายการ');
+ publicCatalogReady=true;
+ cloudStatus('☁️ สต๊อกล่าสุดสำหรับลูกค้า '+rows.length+' รายการ');
+ return true;
 }
 function startPublicCatalogRefresh(){
  if(publicCatalogTimer)clearInterval(publicCatalogTimer);
