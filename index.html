@@ -261,7 +261,7 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
 
 <div class="drawer" id="drw" onclick="if(event.target.id==='drw')dClose()">
   <div class="dpanel">
-    <div class="row nowrap" style="margin-bottom:6px"><b style="font-size:1rem">เมนูผู้จัดการ</b><button class="btn gh sm" onclick="dClose()">✕</button></div>
+    <div class="row nowrap" style="margin-bottom:6px"><b style="font-size:1rem">เมนูหลัก · หน้าบ้าน / หลังบ้าน</b><button class="btn gh sm" onclick="dClose()">✕</button></div>
     <div class="mini" style="padding-left:8px">สถานะ: <b id="authTx">ยังไม่เข้าสู่ระบบ</b></div>
     <div class="dhd">🔤 ขนาดตัวอักษร</div>
     <div class="fsrow">
@@ -1021,6 +1021,7 @@ function go(n,el){
  for(var i=0;i<pg.length;i++)pg[i].classList.remove('on');
  var p=document.getElementById('p'+n);if(!p)return;
  p.classList.add('on');
+ var bottomNav=document.querySelector('nav');if(bottomNav)bottomNav.style.display=n>=6?'none':'flex';
  var nb=document.querySelectorAll('nav button');
  for(var j=0;j<nb.length;j++)nb[j].classList.remove('on');
  if(el)el.classList.add('on');else if(n<=5)nb[n-1].classList.add('on');
