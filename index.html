@@ -2350,6 +2350,19 @@ function badge(){
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+/* Global dish renderer: keep available to all app rendering scopes. */
+window.dishVisual = function(m) {
+  var escapeHtml = function(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function(ch) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  };
+  return m && m.img
+    ? '<img class="dish-img" src="' + escapeHtml(m.img) + '" alt="' + escapeHtml(m.n || 'รูปอาหาร') + '" loading="lazy">'
+    : escapeHtml(m && m.ic || '🍲');
+};
+</script>
+<script>
 /* Supabase stock: authenticate before reading or writing. */
 const CLOUD_URL='https://vpswgsblkszcaddxjapo.supabase.co';
 const CLOUD_KEY='sb_publishable_ehaGx3a3k3UzyFzFnS7lTA_u_iQu1zC';
