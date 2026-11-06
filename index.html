@@ -735,6 +735,19 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
 </nav>
 
 <script>
+/* Define dish visual renderer BEFORE the main app script runs. */
+window.dishVisual = function(m) {
+  var esc = function(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function(ch) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  };
+  return m && m.img
+    ? '<img class="dish-img" src="' + esc(m.img) + '" alt="' + esc(m.n || 'รูปอาหาร') + '" loading="lazy">'
+    : esc(m && m.ic || '🍲');
+};
+</script>
+<script>
 /* ========== DATA ========== */
 var DEF_V=[
 {id:'v01',n:'กระเจี๊ยบเขียว',c:'G',ic:'🫛',p:30,bp:0,u:'กก.',t:0,ok:0,s:0,mn:3,core:0,clr:0,src:'market'},
@@ -2349,19 +2362,7 @@ function badge(){
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script>
-/* Global dish renderer: keep available to all app rendering scopes. */
-window.dishVisual = function(m) {
-  var escapeHtml = function(v) {
-    return String(v == null ? '' : v).replace(/[&<>"']/g, function(ch) {
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
-    });
-  };
-  return m && m.img
-    ? '<img class="dish-img" src="' + escapeHtml(m.img) + '" alt="' + escapeHtml(m.n || 'รูปอาหาร') + '" loading="lazy">'
-    : escapeHtml(m && m.ic || '🍲');
-};
-</script>
+
 <script>
 /* Supabase stock: authenticate before reading or writing. */
 const CLOUD_URL='https://vpswgsblkszcaddxjapo.supabase.co';
