@@ -142,6 +142,15 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
 .sl-S{background:linear-gradient(135deg,#bf360c,#ff8a65)}
 .sl-L{background:linear-gradient(135deg,#1b5e20,#4caf50)}
 .slic{font-size:2rem;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))}
+/* Keep recommendation slides stable when a dish photo is present. */
+.slide{height:156px;min-height:156px;max-height:156px;box-sizing:border-box;align-items:center}
+.slic{flex:0 0 38%;width:38%;height:132px;min-width:0;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:9px;font-size:2rem}
+.slic .dish-img{display:block;width:100%;height:100%;object-fit:cover;border-radius:9px}
+.sltx{flex:1 1 0;min-width:0;max-height:100%;overflow:hidden}
+.sltx .t1{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere}
+.sltx .t2{overflow:hidden;overflow-wrap:anywhere}
+@media(max-width:420px){.slide{height:148px;min-height:148px;max-height:148px;padding:8px;gap:7px}.slic{flex-basis:34%;width:34%;height:128px}.sltx .t1{font-size:.86rem}.sltx .t2{font-size:.68rem}.slbtn{padding:6px 8px;font-size:.72rem}}
+
 .sltx{flex:1 1 auto;min-width:0}
 .sltx .t1{font-size:.95rem;font-weight:800;line-height:1.35}
 .sltx .t2{font-size:.75rem;opacity:.95;margin-top:3px}
