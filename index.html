@@ -1389,7 +1389,7 @@ function sclUI(){var el=document.getElementById('scl');if(!el)return;
   return '<div class="chip '+(S.scale===x[0]?'on':'')+'" onclick="setScale('+x[0]+')">'+x[1]+'</div>'}).join('');
  var current=document.getElementById('scaleCurrent');
  if(current)current.textContent=S.scale===1?'สูตรปกติ ×1':'กำลังทำ ×'+S.scale}
-function setScale(n){S.scale=n;S.buyq={};sclUI();bom();save()}
+function setScale(n){S.scale=n;S.buyq={};sclUI();bom();badge();save()}
 function autoBuy(id,need){return need}
 function buyOf(id,need){
  if(S.buyq[id]!==undefined)return Math.max(0,parseFloat(S.buyq[id])||0);
