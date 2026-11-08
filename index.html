@@ -1468,6 +1468,24 @@ function bomCard(r){
    +'<span id="pwr_'+r.it.id+'" style="display:'+(hp?'inline-block':'none')+'">'+prepSelect(r.it.id)+'</span>'
    +'</div></div>'):'')
   +'</div>'}
+function profitOverview(est,purchaseTotal){
+ var rangeYield=est.lo===est.hi?String(est.lo):est.lo+'–'+est.hi;
+ return '<div class="card" style="padding:12px;border:1px solid #ded5f5;border-radius:14px">'
+  +'<div style="background:linear-gradient(135deg,#5130a5,#6843b8);color:#fff;border-radius:12px;padding:13px">'
+  +'<div style="font-size:.9rem;font-weight:700">📈 ภาพรวมกำไรเมนูวันนี้</div>'
+  +'<div style="font-size:.68rem;opacity:.85;margin:3px 0 12px">สรุปจากเมนูที่เลือกและขนาดสูตรที่กำหนด</div>'
+  +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 12px">'
+  +'<div><div style="font-size:.68rem;opacity:.85">ต้นทุนวัตถุดิบรวม</div><div style="font-size:1.22rem;font-weight:800;margin-top:3px">฿'+est.cost.toFixed(0)+'</div></div>'
+  +'<div><div style="font-size:.68rem;opacity:.85">จำนวนถุงโดยประมาณ</div><div style="font-size:1.22rem;font-weight:800;margin-top:3px">'+rangeYield+'</div></div>'
+  +'<div><div style="font-size:.68rem;opacity:.85">รายรับหากขายหมด</div><div style="font-size:1.08rem;font-weight:800;margin-top:3px">'+moneyBand(est.revenueLo,est.revenueHi,0)+'</div></div>'
+  +'<div><div style="font-size:.68rem;opacity:.85">กำไรขั้นต้นประมาณ</div><div style="font-size:1.08rem;font-weight:800;color:#86efac;margin-top:3px">'+moneyBand(est.profitLo,est.profitHi,0)+'</div></div>'
+  +'</div><div style="border-top:1px solid rgba(255,255,255,.25);margin-top:13px;padding-top:10px;font-size:.68rem;opacity:.85">ตัวเลขตัวอย่างเพื่อแสดงรูปแบบ ไม่ใช่ข้อมูลจริงของร้าน</div></div>'
+  +'<div style="padding:10px 2px 2px"><div style="font-size:.82rem">เงินที่ต้องซื้อวัตถุดิบเพิ่ม</div>'
+  +'<div style="font-size:1.12rem;font-weight:800;color:#159447">฿'+purchaseTotal.toFixed(0)+'</div>'
+  +'<div style="font-size:.68rem;color:#7a887e">หักวัตถุดิบที่มีอยู่ในสต็อกแล้ว</div></div>'
+  +'<div style="background:#f0f8ef;border-radius:9px;padding:10px;margin-top:5px;font-size:.74rem;color:#315b36"><b>💡 คำแนะนำ</b><div style="margin-top:3px">เมนูที่เลือกมีโอกาสสร้างกำไรขั้นต้น แต่ควรเผื่อค่าแก๊ส ค่าแรง บรรจุภัณฑ์ และของเหลือขายด้วย</div></div>'
+  +'<div style="font-size:.67rem;color:#879188;margin-top:8px">*กำไรนี้เป็นกำไรขั้นต้นจากวัตถุดิบ ไม่ใช่กำไรสุทธิ</div></div>'
+}
 function bom(){
  var box=document.getElementById('bom');if(!box)return;
  if(!S.sel.length){box.innerHTML='<div class="emp"><i>🍽️</i>ยังไม่ได้เลือกเมนู<br>ไปแท็บ "กับข้าว" เพื่อเลือกก่อน</div>';return}
@@ -1475,13 +1493,7 @@ function bom(){
  var keys=Object.keys(need).filter(function(k){return S.hid.indexOf(k)===-1});
  if(!keys.length){
   var estEmpty=selectedEstimate();
-  box.innerHTML='<div class="card" style="border-left:4px solid #2e7d32">'
-   +'<b>📊 ภาพรวมกำไรเมนูวันนี้</b>'
-   +'<div class="mini" style="margin:5px 0">จำนวนที่คาดว่าจะได้ '+(estEmpty.lo===estEmpty.hi?estEmpty.lo:estEmpty.lo+'–'+estEmpty.hi)+' ถุง</div>'
-   +'<div class="row nowrap"><span class="mini">ต้นทุนวัตถุดิบรวม</span><b>฿'+estEmpty.cost.toFixed(0)+'</b></div>'
-   +'<div class="row nowrap"><span class="mini">รายรับหากขายหมด</span><b>'+moneyBand(estEmpty.revenueLo,estEmpty.revenueHi,0)+'</b></div>'
-   +'<div class="row nowrap"><span class="mini">กำไรขั้นต้นโดยประมาณ</span><b style="color:'+(estEmpty.profitLo>=0?'#2e7d32':'#c62828')+'">'+moneyBand(estEmpty.profitLo,estEmpty.profitHi,0)+'</b></div>'
-   +'<div class="mini">ประมาณการจากวัตถุดิบ ยังไม่รวมค่าแก๊ส ค่าแรง บรรจุภัณฑ์ ของเสีย และถุงที่ขายไม่หมด</div></div>'
+  box.innerHTML=profitOverview(estEmpty,0)
    +'<div class="emp"><i>✅</i>ไม่มีรายการที่ต้องซื้อเพิ่มแล้ว'
    +(S.hid.length?('<br><span class="mini">ซ่อน '+S.hid.length+' รายการ</span>'):'')+'</div>'
    +(S.hid.length?'<button class="btn gh" onclick="restoreHid()">↩️ คืนรายการที่ซ่อน ('+S.hid.length+')</button>':'');
@@ -1499,13 +1511,7 @@ function bom(){
  var pk=S.done.filter(function(id){return need[id]!==undefined&&S.hid.indexOf(id)===-1}).length;
  var pn=rows.filter(function(r){return prepOf(r.it.id)>0}).length;
  var est=selectedEstimate();
- var h='<div class="card" style="border-left:4px solid #2e7d32">'
-  +'<b>📊 ประมาณการเมนูที่เลือก (×'+S.scale+')</b>'
-  +'<div class="mini" style="margin:5px 0">จำนวนที่คาดว่าจะได้ '+(est.lo===est.hi?est.lo:est.lo+'–'+est.hi)+' ถุง</div>'
-  +'<div class="row nowrap"><span class="mini">ต้นทุนวัตถุดิบ</span><b>฿'+est.cost.toFixed(0)+'</b></div>'
-  +'<div class="row nowrap"><span class="mini">รายรับหากขายหมด</span><b>'+moneyBand(est.revenueLo,est.revenueHi,0)+'</b></div>'
-  +'<div class="row nowrap"><span class="mini">กำไรขั้นต้นโดยประมาณ</span><b style="color:'+(est.profitLo>=0?'#2e7d32':'#c62828')+'">'+moneyBand(est.profitLo,est.profitHi,0)+'</b></div>'
-  +'<div class="mini">ตัวเลขนี้คูณตามขนาดสูตรที่เลือกแล้ว ยังไม่รวมค่าแก๊ส ค่าแรง บรรจุภัณฑ์ ของเสีย และถุงที่ขายไม่หมด</div></div>'
+ var h=profitOverview(est,sum)
   +'<div class="bar"><div style="font-size:.78rem;opacity:.85">ค่าวัตถุดิบที่ต้องซื้อ (หลังหักของที่มีพอแล้ว)</div>'
   +'<div class="big">฿'+sum.toFixed(0)+'</div>'
   +'<div class="sub">🥬 แผงผัก ฿'+sumV.toFixed(0)+' · 🥩 ร้านอื่น ฿'+(sum-sumV).toFixed(0)+'</div>'
