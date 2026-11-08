@@ -1375,6 +1375,10 @@ function clearSel(){if(!S.sel.length){toast('ยังไม่ได้เล�
   S.sel=[];S.done=[];S.hid=[];S.buyq={};mlist();renderSlides();badge();save();if(onPage(2))bom();toast('🧹 ล้างแล้ว')})}
 
 /* ========== 2 แผนซื้อ (ปรับให้ต้องซื้อทั้งหมดก่อน กำหนดให้สต๊อกในแผนเป็น 0) ========== */
+function selectedEstimate(){var cost=0,lo=0,hi=0,revenueLo=0,revenueHi=0;
+  S.sel.forEach(function(id){var m=mOf(id);if(!m)return;var c=menuCost(m)*S.scale,y1=yieldMin(m)*S.scale,y2=yieldMax(m)*S.scale;
+   cost+=c;lo+=y1;hi+=y2;revenueLo+=y1*(Number(m.sp)||0);revenueHi+=y2*(Number(m.sp)||0)});
+  return {cost:cost,lo:lo,hi:hi,revenueLo:revenueLo,revenueHi:revenueHi,profitLo:revenueLo-cost,profitHi:revenueHi-cost}}
 function needMap(){var n={};
  S.sel.forEach(function(id){var m=mOf(id);if(!m)return;
   bomOf(m).forEach(function(p){var it=itm(p[0]);if(it)n[p[0]]=(n[p[0]]||0)+ingredientStockQty(p,it)*S.scale})});
@@ -1485,7 +1489,15 @@ function bom(){
  var sumV=rows.reduce(function(a,r){return a+(isShop(r.it.id)?r.cost:0)},0);
  var pk=S.done.filter(function(id){return need[id]!==undefined&&S.hid.indexOf(id)===-1}).length;
  var pn=rows.filter(function(r){return prepOf(r.it.id)>0}).length;
- var h='<div class="bar"><div style="font-size:.78rem;opacity:.85">ค่าวัตถุดิบที่ต้องซื้อ (หลังหักของที่มีพอแล้ว)</div>'
+ var est=selectedEstimate();
+ var h='<div class="card" style="border-left:4px solid #2e7d32">'
+  +'<b>📊 ประมาณการเมนูที่เลือก (×'+S.scale+')</b>'
+  +'<div class="mini" style="margin:5px 0">จำนวนที่คาดว่าจะได้ '+(est.lo===est.hi?est.lo:est.lo+'–'+est.hi)+' ถุง</div>'
+  +'<div class="row nowrap"><span class="mini">ต้นทุนวัตถุดิบ</span><b>฿'+est.cost.toFixed(0)+'</b></div>'
+  +'<div class="row nowrap"><span class="mini">รายรับหากขายหมด</span><b>'+moneyBand(est.revenueLo,est.revenueHi,0)+'</b></div>'
+  +'<div class="row nowrap"><span class="mini">กำไรขั้นต้นโดยประมาณ</span><b style="color:'+(est.profitLo>=0?'#2e7d32':'#c62828')+'">'+moneyBand(est.profitLo,est.profitHi,0)+'</b></div>'
+  +'<div class="mini">ตัวเลขนี้คูณตามขนาดสูตรที่เลือกแล้ว ยังไม่รวมค่าแก๊ส ค่าแรง บรรจุภัณฑ์ ของเสีย และถุงที่ขายไม่หมด</div></div>'
+  +'<div class="bar"><div style="font-size:.78rem;opacity:.85">ค่าวัตถุดิบที่ต้องซื้อ (หลังหักของที่มีพอแล้ว)</div>'
   +'<div class="big">฿'+sum.toFixed(0)+'</div>'
   +'<div class="sub">🥬 แผงผัก ฿'+sumV.toFixed(0)+' · 🥩 ร้านอื่น ฿'+(sum-sumV).toFixed(0)+'</div>'
   +'<div class="sub">'+rows.length+' รายการ · ✂️ สั่งเตรียม '+pn
