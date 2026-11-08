@@ -1304,21 +1304,24 @@ function recOpen(id){
    +'<b style="white-space:nowrap">'+ingredientLabel(p)+' · ฿'+ingredientCost(p).toFixed(2)+'</b></div>'}).join('');
  var steps=m.r.map(function(t){return '<li>'+t+'</li>'}).join('');
  var tags=m.h.map(function(x){return '<span class="tag t-b">'+(HICON[x]||'💚')+' '+x+'</span>'}).join('');
- var cost=menuCost(m),cpb=cost/m.bg,mg=marginOf(m);
+ var cost=menuCost(m),ylo=yieldMin(m),yhi=yieldMax(m),cpbLow=cost/yhi,cpbHigh=cost/ylo,revLow=ylo*m.sp,revHigh=yhi*m.sp,profitLow=revLow-cost,profitHigh=revHigh-cost,breakEven=m.sp>0?Math.ceil(cost/m.sp):null,mg=marginOf(m);
  document.getElementById('recBody').innerHTML=
   '<div class="row nowrap" style="margin-bottom:8px"><b style="font-size:1rem">📖 สูตรอาหาร</b>'
   +'<button class="btn gh sm" onclick="recClose()">✕</button></div>'
   +'<div class="bigimg mi-'+m.c+'">'+dishVisual(m)+'</div>'
   +'<div class="nm" style="font-size:1.1rem">'+m.n+'</div>'
-  +'<div class="mu">'+m.c+' · ⏱️ '+m.tm+' · '+m.lv+' · ได้ '+m.bg+' ถุง</div>'
+  +'<div class="mu">'+m.c+' · ⏱️ '+m.tm+' · '+m.lv+' · '+yieldLabel(m)+'</div>'
    +(m.yt&&dishYouTubeId(m.yt)?'<div class="sec">▶️ วิดีโอสาธิตวิธีทำ</div>'+dishVideoEmbed(dishYouTubeId(m.yt),m.n)+'<a class="btn gh" style="display:block;text-align:center;text-decoration:none;margin-top:8px" href="https://www.youtube.com/watch?v='+dishYouTubeId(m.yt)+'" target="_blank" rel="noopener">เปิดวิดีโอบน YouTube ↗</a>':'')
   +'<div style="margin:6px 0"><span class="tag t-g">💚 '+m.w+'</span>'+tags+'</div>'
   +'<div class="card '+(mg>=45?'drop':'ok')+'">'
-  +'<div class="row nowrap"><span class="mini">ต้นทุนวัตถุดิบ</span><b>฿'+cost.toFixed(0)+'</b></div>'
-  +'<div class="row nowrap"><span class="mini">ต้นทุนต่อถุง</span><b>฿'+cpb.toFixed(1)+'</b></div>'
-  +'<div class="row nowrap"><span class="mini">ขาย/กำไรต่อถุง</span>'
-  +'<b class="pos">฿'+m.sp+' · +฿'+(m.sp-cpb).toFixed(1)+' ('+mg.toFixed(0)+'%)</b></div></div>'
-  +'<div class="sec">🧺 ส่วนผสม (สูตรฐาน 4 ที่)</div>'+ing
+  +'<div class="row nowrap"><span class="mini">ต้นทุนวัตถุดิบต่อหม้อ/สูตร</span><b>฿'+cost.toFixed(0)+'</b></div>'
+  +'<div class="row nowrap"><span class="mini">จำนวนถุงที่คาดว่าจะได้</span><b>'+yieldLabel(m)+'</b></div>'
+  +'<div class="row nowrap"><span class="mini">ต้นทุนวัตถุดิบต่อถุง</span><b>'+moneyBand(cpbLow,cpbHigh,1)+'</b></div>'
+  +'<div class="row nowrap"><span class="mini">รายรับหากขายหมด</span><b>'+moneyBand(revLow,revHigh,0)+'</b></div>'
+  +'<div class="row nowrap"><span class="mini">กำไรขั้นต้นโดยประมาณ</span><b class="pos">'+moneyBand(profitLow,profitHigh,0)+'</b></div>'
+  +'<div class="row nowrap"><span class="mini">จุดคุ้มทุน (จำนวนถุง)</span><b>'+(breakEven===null?'-':breakEven+' ถุง')+'</b></div>'
+  +'<div class="mini" style="margin-top:6px">คำนวณจากต้นทุนวัตถุดิบและราคาขาย ยังไม่รวมค่าแก๊ส ค่าแรง บรรจุภัณฑ์ ของเสีย และถุงที่ขายไม่หมด</div></div>'
+  +'<div class="sec">🧺 ส่วนผสมตามสูตรมาตรฐาน</div>'+ing
   +'<div class="sec">👩‍🍳 วิธีทำ</div><ol class="steps">'+steps+'</ol>'
   +'<div class="card hl"><div class="mini"><b>💡 เคล็ดลับ</b><br>'+m.tip+'</div></div>'
   +'<button class="btn '+(s?'r':'')+'" onclick="tog(\''+m.id+'\');recOpen(\''+m.id+'\')">'
