@@ -1320,6 +1320,7 @@ function recOpen(id){
   +'<div class="bigimg mi-'+m.c+'">'+dishVisual(m)+'</div>'
   +'<div class="nm" style="font-size:1.1rem">'+m.n+'</div>'
   +'<div class="mu">'+m.c+' · ⏱️ '+m.tm+' · '+m.lv+' · '+yieldLabel(m)+'</div>'
+  +'<div style="margin:6px 0"><span class="tag t-y">ประมาณการเบื้องต้น · ผลผลิตจริงอาจแตกต่าง</span></div>'
    +(m.yt&&dishYouTubeId(m.yt)?'<div class="sec">▶️ วิดีโอสาธิตวิธีทำ</div>'+dishVideoEmbed(dishYouTubeId(m.yt),m.n)+'<a class="btn gh" style="display:block;text-align:center;text-decoration:none;margin-top:8px" href="https://www.youtube.com/watch?v='+dishYouTubeId(m.yt)+'" target="_blank" rel="noopener">เปิดวิดีโอบน YouTube ↗</a>':'')
   +'<div style="margin:6px 0"><span class="tag t-g">💚 '+m.w+'</span>'+tags+'</div>'
   +'<div class="card '+(mg>=45?'drop':'ok')+'">'
