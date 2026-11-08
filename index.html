@@ -17,6 +17,13 @@ header h1{font-size:1.15rem;font-weight:800}header p{font-size:.76rem;opacity:.9
 .page{display:none;padding:12px 10px}.page.on{display:block;animation:f .22s}
 @keyframes f{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
 .card{background:#fff;border-radius:13px;padding:12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+ .scale-opts{padding:10px 12px}
+ .scale-opts summary{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;list-style:none;font-size:.88rem;font-weight:700;color:#52685a}
+ .scale-opts summary::-webkit-details-marker{display:none}
+ .scale-opts summary:after{content:'＋';font-size:1rem;color:#2e7d32}
+ .scale-opts[open] summary:after{content:'−'}
+ .scale-current{font-size:.76rem;font-weight:600;color:#2e7d32;background:#edf7ed;border-radius:20px;padding:4px 8px;white-space:nowrap}
+ .scale-hint{font-size:.74rem;color:#819087;margin:8px 0 6px}
 .row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .nowrap{flex-wrap:nowrap}
 .grow{flex:1 1 110px;min-width:0}
@@ -404,7 +411,11 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
 
 <!-- 2 แผนซื้อ -->
 <section id="p2" class="page">
-  <div class="card"><label>ปรับสูตรตามจำนวนที่จะทำ</label><div class="wchips" id="scl" style="margin:6px 0 0"></div></div>
+  <details class="card scale-opts">
+    <summary><span>⚙️ ปรับขนาดสูตร <span style="font-weight:400">(ตัวเลือกเสริม)</span></span><span class="scale-current" id="scaleCurrent">สูตรปกติ ×1</span></summary>
+    <div class="scale-hint">เลือกเมื่ออยากทำมากกว่าสูตรปกติ ระบบจะคูณปริมาณวัตถุดิบในแผนซื้อให้</div>
+    <div class="wchips" id="scl" style="margin:6px 0 0"></div>
+  </details>
   <div id="bom"></div>
   <div class="aff-slide-wrap">
     <div class="aff-slide-title"><b>🛒 สินค้าแนะนำสำหรับร้านค้า</b><button class="btn gh sm" onclick="go(5,null)">ดูทั้งหมด</button></div>
@@ -886,7 +897,7 @@ var M=[
  r:['หั่นผักกาดขาวชิ้นพอคำ แยกก้านกับใบ','ทอดเต้าหู้ไข่ให้เหลืองรอบด้าน พักไว้','เจียวกระเทียม ใส่ก้านผัดก่อน 1 นาที','ใส่ใบผักกาดและเต้าหู้','ปรุงซอสหอยนางรม โรยต้นหอม'],
  tip:'ทอดเต้าหู้แยกก่อน จะไม่แตกเละ'}];
 var PREP=['ไม่ต้องเตรียม','หั่นชิ้น','ซอยบาง','สับละเอียด','ทุบ','แกะ/เด็ด'];
-var SCALES=[[1,'4 ที่ (ฐาน)'],[2,'8 ที่ ×2'],[3,'12 ที่ ×3'],[5,'20 ที่ ×5'],[10,'40 ที่ ×10']];
+var SCALES=[[1,'×1 สูตรปกติ'],[2,'×2 ทำ 2 เท่า'],[3,'×3 ทำ 3 เท่า'],[5,'×5 ทำ 5 เท่า'],[10,'×10 ทำ 10 เท่า']];
 var STORES={bigc:{n:'Big C',ic:'🔵',cls:'sh-bigc',dl:'ส่งใน 2 ชม. · ขั้นต่ำ ฿200',u:'https://www.bigc.co.th'},
  s711:{n:'7-Eleven',ic:'🟢',cls:'sh-711',dl:'7Delivery ส่งใน 30 นาที',u:'https://www.7eleven.co.th'},
  makro:{n:'Makro',ic:'🔴',cls:'sh-makro',dl:'ซื้อยกลัง ราคาส่ง',u:'https://www.makro.pro'}};
@@ -1370,7 +1381,9 @@ function needMap(){var n={};
  return n}
 function sclUI(){var el=document.getElementById('scl');if(!el)return;
  el.innerHTML=SCALES.map(function(x){
-  return '<div class="chip '+(S.scale===x[0]?'on':'')+'" onclick="setScale('+x[0]+')">'+x[1]+'</div>'}).join('')}
+  return '<div class="chip '+(S.scale===x[0]?'on':'')+'" onclick="setScale('+x[0]+')">'+x[1]+'</div>'}).join('');
+ var current=document.getElementById('scaleCurrent');
+ if(current)current.textContent=S.scale===1?'สูตรปกติ ×1':'กำลังทำ ×'+S.scale}
 function setScale(n){S.scale=n;S.buyq={};sclUI();bom();save()}
 function autoBuy(id,need){return need}
 function buyOf(id,need){
