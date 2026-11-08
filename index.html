@@ -384,10 +384,11 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
         <button class="btn gh sm" style="padding:4px 8px;font-size:.7rem;background:rgba(255,255,255,.2);color:#fff;border:none" onclick="clearSel()">🧹 ล้าง</button>
       </div>
     </div>
-    <div class="bar profit-banner" onclick="adminGo(10)">
-      <div style="font-size:.78rem;opacity:.85">💰 ตรวจต้นทุนและกำไร</div>
-      <div class="big">วิเคราะห์กำไร</div>
-      <div class="sub">ดูต้นทุนต่อถุง ราคาขาย และกำไรของทุกเมนู</div>
+    <div class="bar profit-banner" role="button" tabindex="0" onclick="go(2,null)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();go(2,null)}">
+      <div style="font-size:.78rem;opacity:.9">💰 สรุปเมนูที่เลือกวันนี้</div>
+      <div class="big">ภาพรวมกำไรวันนี้</div>
+      <div class="sub" id="profitBannerSummary">เลือกเมนูเพื่อดูต้นทุน รายรับ และกำไรรวม</div>
+      <div class="sub" style="margin-top:5px;font-weight:700">แตะเพื่อดูรายละเอียด →</div>
     </div>
   </div>
   <div class="slwrap">
@@ -1473,9 +1474,17 @@ function bom(){
  var need=needMap();
  var keys=Object.keys(need).filter(function(k){return S.hid.indexOf(k)===-1});
  if(!keys.length){
-  box.innerHTML='<div class="emp"><i>✅</i>ไม่มีรายการในแผนซื้อแล้ว'
-   +(S.hid.length?('<br><span class="mini">ลบไป '+S.hid.length+' รายการ</span>'):'')+'</div>'
-   +(S.hid.length?'<button class="btn gh" onclick="restoreHid()">↩️ คืนรายการที่ลบ ('+S.hid.length+')</button>':'');
+  var estEmpty=selectedEstimate();
+  box.innerHTML='<div class="card" style="border-left:4px solid #2e7d32">'
+   +'<b>📊 ภาพรวมกำไรเมนูวันนี้</b>'
+   +'<div class="mini" style="margin:5px 0">จำนวนที่คาดว่าจะได้ '+(estEmpty.lo===estEmpty.hi?estEmpty.lo:estEmpty.lo+'–'+estEmpty.hi)+' ถุง</div>'
+   +'<div class="row nowrap"><span class="mini">ต้นทุนวัตถุดิบรวม</span><b>฿'+estEmpty.cost.toFixed(0)+'</b></div>'
+   +'<div class="row nowrap"><span class="mini">รายรับหากขายหมด</span><b>'+moneyBand(estEmpty.revenueLo,estEmpty.revenueHi,0)+'</b></div>'
+   +'<div class="row nowrap"><span class="mini">กำไรขั้นต้นโดยประมาณ</span><b style="color:'+(estEmpty.profitLo>=0?'#2e7d32':'#c62828')+'">'+moneyBand(estEmpty.profitLo,estEmpty.profitHi,0)+'</b></div>'
+   +'<div class="mini">ประมาณการจากวัตถุดิบ ยังไม่รวมค่าแก๊ส ค่าแรง บรรจุภัณฑ์ ของเสีย และถุงที่ขายไม่หมด</div></div>'
+   +'<div class="emp"><i>✅</i>ไม่มีรายการที่ต้องซื้อเพิ่มแล้ว'
+   +(S.hid.length?('<br><span class="mini">ซ่อน '+S.hid.length+' รายการ</span>'):'')+'</div>'
+   +(S.hid.length?'<button class="btn gh" onclick="restoreHid()">↩️ คืนรายการที่ซ่อน ('+S.hid.length+')</button>':'');
   return}
  var rows=keys.map(function(i){
   var it=itm(i),q=need[i],buy=buyOf(i,q);
@@ -2383,6 +2392,11 @@ function badge(){
  document.getElementById('mc').textContent=S.sel.length;
  var mc=0;S.sel.forEach(function(id){var m=mOf(id);if(m)mc+=menuCost(m)});
  document.getElementById('mcost').textContent='ต้นทุน ฿'+mc.toFixed(0);
+ var profitBanner=document.getElementById('profitBannerSummary');
+ if(profitBanner){
+  if(!S.sel.length)profitBanner.textContent='เลือกเมนูเพื่อดูต้นทุน รายรับ และกำไรรวม';
+  else {var e=selectedEstimate();profitBanner.textContent='กำไรขั้นต้นประมาณ '+moneyBand(e.profitLo,e.profitHi,0)+' · '+S.sel.length+' เมนู'}
+ }
  var ks=Object.keys(S.cart),n=ks.length,t=0,sv=0;
  ks.forEach(function(i){var x=itm(i);if(!x)return;
   var o=S.cart[i];t+=pz(x)*o.q;
