@@ -1498,7 +1498,7 @@ function priceAdjustReset(){S.sel.forEach(function(id){delete dishPricePreview[i
 function priceAdjustRender(){var el=document.getElementById('priceAdjustRows');if(!el)return;
  el.innerHTML=S.sel.map(function(id){var m=mOf(id);if(!m)return '';var p=previewDishPrice(m),base=Number(m.sp)||0;
   return '<div class="card" style="padding:10px;margin-bottom:8px"><div style="font-weight:700;margin-bottom:7px">'+dishEsc(m.n)+'</div>'
-   + "<div class=\"f\"><label>ราคาขายต่อถุง (บาท)</label><input type=\"number\" min=\"0\" step=\"0.5\" value=\""+p+"\" oninput=\"priceAdjustSet('"+m.id+"',this.value)\" inputmode=\"decimal\"></div>"
+   + "<div class=\"f\"><label>ราคาขายต่อถุง (บาท)</label><input type=\"number\" min=\"0\" step=\"0.5\" value=\""+p+"\" onchange=\"priceAdjustSet('"+m.id+"',this.value)\" inputmode=\"decimal\"></div>"
    + '<div class="row" style="gap:5px;flex-wrap:wrap;margin-top:7px">'+[25,30,35,40].map(function(v){return "<button type=\"button\" class=\"btn "+(p===v?'':'gh')+" sm\" onclick=\"priceAdjustQuick('"+m.id+"',"+v+")\">"+v+" บาท</button>"}).join('')+'</div>'
    +'<div class="mini" style="margin-top:5px">ราคาเดิมในสูตร: ฿'+base+(dishPricePreview[m.id]!==undefined?' · กำลังใช้ราคาทดลอง':' · ใช้ราคาเดิม')+'</div></div>'}).join('');
 }
