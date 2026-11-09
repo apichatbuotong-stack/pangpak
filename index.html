@@ -337,7 +337,7 @@ th{color:var(--mut);font-size:.75rem;font-weight:700}
   </div>
 </div>
 
-<div class="drawer" id="recbox" onclick="if(event.target.id==='recbox')recClose()">
+<div class="drawer" id="priceAdjustBox" onclick="if(event.target.id==='priceAdjustBox')priceAdjustClose()"><div class="modal wide"><div class="row nowrap" style="margin-bottom:8px"><b style="font-size:1rem">✏️ ปรับราคาขายเพื่อประเมินกำไร</b><button class="btn gh sm" onclick="priceAdjustClose()">✕</button></div><div class="mini" style="margin-bottom:10px">ปรับราคาแยกแต่ละเมนูได้ ราคานี้ใช้ทดลองคำนวณเท่านั้น ไม่เปลี่ยนราคาประจำในสูตรอาหาร</div><div id="priceAdjustRows"></div><div class="f2" style="margin-top:10px"><div><button class="btn gh" onclick="priceAdjustReset()">↩️ คืนราคาเดิมทั้งหมด</button></div><div><button class="btn" onclick="priceAdjustClose()">ใช้ราคานี้ประเมิน</button></div></div></div></div><div class="drawer" id="recbox" onclick="if(event.target.id==='recbox')recClose()">
   <div class="modal wide" id="recBody"></div>
 </div>
 <div class="drawer" id="rsbox" onclick="if(event.target.id==='rsbox')rsClose()">
@@ -927,6 +927,7 @@ var SHOP=[
 /* ========== STATE ========== */
 var LS='pangpak_v47';
 var S={V:[],G:[],sel:[],cart:{},prep:{},buys:[],vps:[],books:[],done:[],hid:[],buyq:{},restockAdd:[],restockHide:[],linePick:{},buyStore:{},sentLine:{},scale:1,auth:0,clicks:{},fs:15};
+var dishPricePreview={};
 try{var raw=localStorage.getItem(LS)||localStorage.getItem('pangpak_v46')||localStorage.getItem('pangpak_v45');
  if(raw)S=Object.assign(S,JSON.parse(raw))}catch(e){}
 
@@ -1376,9 +1377,10 @@ function clearSel(){if(!S.sel.length){toast('ยังไม่ได้เล�
   S.sel=[];S.done=[];S.hid=[];S.buyq={};mlist();renderSlides();badge();save();if(onPage(2))bom();toast('🧹 ล้างแล้ว')})}
 
 /* ========== 2 แผนซื้อ (ปรับให้ต้องซื้อทั้งหมดก่อน กำหนดให้สต๊อกในแผนเป็น 0) ========== */
+function previewDishPrice(m){return dishPricePreview[m.id]!==undefined?Math.max(0,Number(dishPricePreview[m.id])||0):(Number(m.sp)||0)}
 function selectedEstimate(){var cost=0,lo=0,hi=0,revenueLo=0,revenueHi=0;
-  S.sel.forEach(function(id){var m=mOf(id);if(!m)return;var c=menuCost(m)*S.scale,y1=yieldMin(m)*S.scale,y2=yieldMax(m)*S.scale;
-   cost+=c;lo+=y1;hi+=y2;revenueLo+=y1*(Number(m.sp)||0);revenueHi+=y2*(Number(m.sp)||0)});
+  S.sel.forEach(function(id){var m=mOf(id);if(!m)return;var c=menuCost(m)*S.scale,y1=yieldMin(m)*S.scale,y2=yieldMax(m)*S.scale,price=previewDishPrice(m);
+   cost+=c;lo+=y1;hi+=y2;revenueLo+=y1*price;revenueHi+=y2*price});
   return {cost:cost,lo:lo,hi:hi,revenueLo:revenueLo,revenueHi:revenueHi,profitLo:revenueLo-cost,profitHi:revenueHi-cost}}
 function needMap(){var n={};
  S.sel.forEach(function(id){var m=mOf(id);if(!m)return;
@@ -1484,7 +1486,21 @@ function profitOverview(est,purchaseTotal){
   +'<div style="font-size:1.12rem;font-weight:800;color:#159447">฿'+purchaseTotal.toFixed(0)+'</div>'
   +'<div style="font-size:.68rem;color:#7a887e">หักวัตถุดิบที่มีอยู่ในสต็อกแล้ว</div></div>'
   +'<div style="background:#f0f8ef;border-radius:9px;padding:10px;margin-top:5px;font-size:.74rem;color:#315b36"><b>💡 คำแนะนำ</b><div style="margin-top:3px">เมนูที่เลือกมีโอกาสสร้างกำไรขั้นต้น แต่ควรเผื่อค่าแก๊ส ค่าแรง บรรจุภัณฑ์ และของเหลือขายด้วย</div></div>'
-  +'<div style="font-size:.67rem;color:#879188;margin-top:8px">*กำไรนี้เป็นกำไรขั้นต้นจากวัตถุดิบ ไม่ใช่กำไรสุทธิ</div></div>'
+  +'<button class="btn gh" style="margin-top:9px" onclick="priceAdjustOpen()">✏️ ปรับราคาขายเพื่อประเมินกำไร</button>'
+  +'<div style="font-size:.67rem;color:#879188;margin-top:8px">*กำไรนี้เป็นกำไรขั้นต้นจากวัตถุดิบ ไม่ใช่กำไรสุทธิ · ราคาที่ปรับเป็นเพียงการทดลอง</div></div>'
+}
+
+function priceAdjustOpen(){if(!S.sel.length){toast('กรุณาเลือกเมนูก่อน');return}priceAdjustRender();document.getElementById('priceAdjustBox').classList.add('on')}
+function priceAdjustClose(){document.getElementById('priceAdjustBox').classList.remove('on')}
+function priceAdjustSet(id,value){var p=String(value).trim()===''?null:Number(value);if(p===null||!Number.isFinite(p)||p<0)delete dishPricePreview[id];else dishPricePreview[id]=p;priceAdjustRender();bom()}
+function priceAdjustQuick(id,value){dishPricePreview[id]=value;priceAdjustRender();bom()}
+function priceAdjustReset(){S.sel.forEach(function(id){delete dishPricePreview[id]});priceAdjustRender();bom();toast('คืนราคาขายตามสูตรเดิมแล้ว')}
+function priceAdjustRender(){var el=document.getElementById('priceAdjustRows');if(!el)return;
+ el.innerHTML=S.sel.map(function(id){var m=mOf(id);if(!m)return '';var p=previewDishPrice(m),base=Number(m.sp)||0;
+  return '<div class="card" style="padding:10px;margin-bottom:8px"><div style="font-weight:700;margin-bottom:7px">'+dishEsc(m.n)+'</div>'
+   + "<div class=\"f\"><label>ราคาขายต่อถุง (บาท)</label><input type=\"number\" min=\"0\" step=\"0.5\" value=\""+p+"\" oninput=\"priceAdjustSet('"+m.id+"',this.value)\" inputmode=\"decimal\"></div>"
+   + '<div class="row" style="gap:5px;flex-wrap:wrap;margin-top:7px">'+[25,30,35,40].map(function(v){return "<button type=\"button\" class=\"btn "+(p===v?'':'gh')+" sm\" onclick=\"priceAdjustQuick('"+m.id+"',"+v+")\">"+v+" บาท</button>"}).join('')+'</div>'
+   +'<div class="mini" style="margin-top:5px">ราคาเดิมในสูตร: ฿'+base+(dishPricePreview[m.id]!==undefined?' · กำลังใช้ราคาทดลอง':' · ใช้ราคาเดิม')+'</div></div>'}).join('');
 }
 function bom(){
  var box=document.getElementById('bom');if(!box)return;
